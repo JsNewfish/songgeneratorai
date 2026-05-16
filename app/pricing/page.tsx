@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check, X, Sparkles } from "lucide-react"
+import { Check, X, Sparkles, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
@@ -14,6 +14,9 @@ import {
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { useLanguage } from "@/contexts/language-context"
+import { useSession, signIn } from "next-auth/react"
+import { useEffect, useRef } from "react"
+import { toast } from "sonner"
 
 const plans = [
   {
@@ -120,21 +123,6 @@ const plans = [
     popular: false,
   },
 ]
-      { name: "AI Vocal Removal", included: true },
-      { name: "AI Singing Photo (10 min)", included: true },
-      { name: "Custom Voice Model (Unlimited)", included: true },
-      { name: "Upload Custom Music (8 min)", included: true },
-      { name: "Unlimited concurrent generations", included: true },
-      { name: "Unlimited cloud storage", included: true },
-      { name: "Private Generation", included: true },
-      { name: "Download MP3", included: true },
-      { name: "Download WAV/MIDI", included: true },
-      { name: "Commercial License", included: true },
-      { name: "Priority email support", included: true },
-    ],
-    popular: false,
-  },
-]
 
 const faqs = [
   { q: "Is it safe to purchase a plan on SongGeneratorAI?", a: "Yes, it is safe to purchase a plan on SongGeneratorAI. We use secure payment gateways to process transactions and ensure that your payment information is protected. Your privacy and security are our top priorities." },
@@ -149,8 +137,73 @@ const faqs = [
 ]
 
 export default function PricingPage() {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
+  const { data: session } = useSession()
   const [isYearly, setIsYearly] = useState(true)
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
+  const [userPlan, setUserPlan] = useState<string>('free')
+  const [topupQty, setTopupQty] = useState(1)
+  const CREDITS_PER_PACK = 200
+  const PRICE_PER_PACK = 3
+  const fetchedRef = useRef(false)
+
+  useEffect(() => {
+    if (!session || fetchedRef.current) return
+    fetchedRef.current = true
+    fetch('/api/credits').then(r => r.json()).then(d => { if (d.plan) setUserPlan(d.plan) }).catch(() => null)
+  }, [session])
+
+  const handleTopup = async () => {
+    if (!session) { signIn('google'); return }
+    if (userPlan === 'free') {
+      toast.error(locale === 'zh' ? '点数包仅对订阅用户开放' : 'Credit packs are available to subscribers only.')
+      return
+    }
+    setLoadingPlan('topup')
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: 'topup', quantity: topupQty }),
+      })
+      const data = await res.json() as { url?: string; error?: string }
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        toast.error(data.error ?? (locale === 'zh' ? '跳转支付失败，请重试' : 'Checkout failed, please try again.'))
+      }
+    } catch {
+      toast.error(locale === 'zh' ? '网络错误，请重试' : 'Network error, please try again.')
+    } finally {
+      setLoadingPlan(null)
+    }
+  }
+
+  const handleSubscribe = async (planName: string) => {
+    if (!session) {
+      signIn('google')
+      return
+    }
+    const plan = `${planName.toLowerCase()}${isYearly ? '_yearly' : ''}`
+    setLoadingPlan(plan)
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      })
+      const data = await res.json() as { url?: string; error?: string }
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        toast.error(data.error ?? (locale === 'zh' ? '跳转支付失败，请重试' : 'Checkout failed, please try again.'))
+      }
+    } catch {
+      toast.error(locale === 'zh' ? '网络错误，请重试' : 'Network error, please try again.')
+    } finally {
+      setLoadingPlan(null)
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -226,16 +279,25 @@ export default function PricingPage() {
                     <p className="text-xs text-muted-foreground">{isYearly ? plan.yearlyCreditsDesc : plan.monthlyCreditsDesc}</p>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    {plan.monthlyPrice === 0 ? (
-                      <Button variant="outline" className="w-full">
-                        Get Started
-                      </Button>
-                    ) : (
-                      <Button className="w-full gap-2" variant={plan.popular ? "default" : "outline"}>
-                        <Sparkles className="h-4 w-4" />
-                        {t.pricing.subscribe}
-                      </Button>
-                    )}
+                    {plan.monthlyPrice > 0 && (() => {
+                        const planId = `${plan.name.toLowerCase()}${isYearly ? '_yearly' : ''}`
+                        const isLoading = loadingPlan === planId
+                        return (
+                          <Button
+                            className="w-full cursor-pointer gap-2"
+                            variant={plan.popular ? "default" : "outline"}
+                            disabled={!!loadingPlan}
+                            onClick={() => handleSubscribe(plan.name)}
+                          >
+                            {isLoading
+                              ? <Loader2 className="h-4 w-4 animate-spin" />
+                              : <Sparkles className="h-4 w-4" />}
+                            {isLoading
+                              ? (locale === 'zh' ? '跳转中…' : 'Redirecting…')
+                              : t.pricing.subscribe}
+                          </Button>
+                        )
+                      })()}
                     <ul className="mt-6 space-y-3">
                       {plan.features.map((feature) => (
                         <li key={feature.name} className="flex items-start gap-2">
@@ -258,23 +320,58 @@ export default function PricingPage() {
             {/* Credit Packs */}
             <div className="mx-auto mt-20 max-w-2xl">
               <h2 className="text-center text-2xl font-bold tracking-tight text-foreground">
-                {t.pricing.creditPacks}
+                {locale === 'zh' ? '点数包' : 'Credit Packs'}
               </h2>
               <p className="mt-2 text-center text-muted-foreground">
-                {t.pricing.creditPacksDesc}
+                {locale === 'zh'
+                  ? '随时通过灵活的一次性点数包充值。点数永不过期，您可在需要时随时使用。'
+                  : 'Top up anytime with flexible one-off credit packs. Credits never expire.'}
               </p>
 
-              <Card className="mt-8 border-border/50">
-                <CardContent className="flex items-center justify-between p-6">
-                  <div>
-                    <h3 className="font-semibold text-foreground">400 Credits</h3>
-                    <p className="text-sm text-muted-foreground">{t.pricing.purchase} - ~$6.00</p>
-                  </div>
-                  <Button variant="outline" disabled>
-                    {t.pricing.subscribersOnly}
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="mx-auto mt-8 max-w-sm">
+                <Card className="overflow-hidden border-border/50">
+                  <CardContent className="p-8">
+                    {/* Stepper */}
+                    <div className="flex items-center justify-center gap-5">
+                      <button
+                        onClick={() => setTopupQty(q => Math.max(1, q - 1))}
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+                      >
+                        <span className="text-xl font-light">−</span>
+                      </button>
+                      <span className="w-8 text-center text-2xl font-bold text-foreground">{topupQty}</span>
+                      <button
+                        onClick={() => setTopupQty(q => q + 1)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+                      >
+                        <span className="text-xl font-light">+</span>
+                      </button>
+                    </div>
+
+                    {/* Credits display */}
+                    <p className="mt-5 text-center text-4xl font-extrabold text-foreground">
+                      {topupQty * CREDITS_PER_PACK} <span className="text-primary">Credits</span>
+                    </p>
+
+                    {/* Buy button */}
+                    <Button
+                      onClick={handleTopup}
+                      disabled={!!loadingPlan}
+                      className="mt-6 w-full cursor-pointer gap-2"
+                    >
+                      {loadingPlan === 'topup' && <Loader2 className="h-4 w-4 animate-spin" />}
+                      {loadingPlan === 'topup'
+                        ? (locale === 'zh' ? '跳转中…' : 'Redirecting…')
+                        : `${locale === 'zh' ? '购买点数' : 'Buy Credits'} - ~$${(topupQty * PRICE_PER_PACK).toFixed(2)}`}
+                    </Button>
+
+                    {/* Subscriber-only hint */}
+                    <p className="mt-3 text-center text-xs text-muted-foreground">
+                      {locale === 'zh' ? '点数包仅对订阅用户开放。' : 'Credit packs are available to subscribers only.'}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
 
             {/* FAQ */}

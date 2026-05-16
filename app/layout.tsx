@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { LanguageProvider } from '@/contexts/language-context'
 import { ThemeProvider } from '@/components/theme-provider'
 import { SessionProvider } from 'next-auth/react'
+import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
 const inter = Inter({ 
@@ -73,6 +74,7 @@ export default function RootLayout({
           <SessionProvider>
             <LanguageProvider>
               {children}
+              <Toaster />
             </LanguageProvider>
           </SessionProvider>
         </ThemeProvider>

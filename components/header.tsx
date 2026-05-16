@@ -37,6 +37,16 @@ export function Header() {
       .catch(() => null)
   }, [isLoggedIn])
 
+  // Sync credits with page-level updates (e.g., after generation)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const credits = (e as CustomEvent<{ credits: number }>).detail?.credits
+      if (typeof credits === "number") setCredits(credits)
+    }
+    window.addEventListener("credits-updated", handler)
+    return () => window.removeEventListener("credits-updated", handler)
+  }, [])
+
   const user = {
     name: session?.user?.name ?? "User",
     email: session?.user?.email ?? "",
@@ -185,6 +195,17 @@ export function Header() {
 
         {/* Mobile Menu Button */}
         <div className="flex items-center gap-2 lg:hidden">
+          {mounted && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+          )}
           <LanguageSelector />
           <button
             className="flex h-10 w-10 items-center justify-center rounded-lg border border-border"

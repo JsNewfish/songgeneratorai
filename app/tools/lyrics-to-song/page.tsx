@@ -27,6 +27,7 @@ import { LyricsGeneratorDialog } from "@/components/lyrics-generator-dialog"
 import { AICoverPanel } from "@/components/tool-panel-ai-cover"
 import { VocalRemoverPanel } from "@/components/tool-panel-vocal-remover"
 import { UpgradeDialog } from "@/components/upgrade-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useLanguage } from "@/contexts/language-context"
 
@@ -60,6 +61,7 @@ type SongItem = {
   audio_url: string
   duration: string
   subtitle: string
+  tool?: string
 }
 
 const demoSongs: SongItem[] = []
@@ -73,7 +75,7 @@ function localizeStyle(style: string, locale: string): string {
 
 const albums = ["ALL", "Pop", "Rock", "Electronic", "Hip Hop", "Jazz"]
 
-export default function LyricsToSongPage() {
+export default function LyricsToSongPage({ initialTool = "lyrics-to-song" }: { initialTool?: string } = {}) {
   const { t, locale } = useLanguage()
   const { data: session } = useSession()
   const searchParams = useSearchParams()
@@ -89,6 +91,11 @@ export default function LyricsToSongPage() {
   const [userPlan, setUserPlan] = useState<string>('free')
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false)
   const [upgradeFeature, setUpgradeFeature] = useState<{ name: string; nameZh: string }>({ name: 'AI Singer', nameZh: 'AI歌手' })
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+  const [concurrentLimitOpen, setConcurrentLimitOpen] = useState(false)
+  const [editSongDialogOpen, setEditSongDialogOpen] = useState(false)
+  const [editTargetSong, setEditTargetSong] = useState<SongItem | null>(null)
+  const [editSongTitle, setEditSongTitle] = useState('')
   const [voice, setVoice] = useState<"male" | "female" | "random">("random")
   const [weirdness, setWeirdness] = useState([50])
   const [styleInfluence, setStyleInfluence] = useState([50])
@@ -97,18 +104,28 @@ export default function LyricsToSongPage() {
   const [generateError, setGenerateError] = useState<string | null>(null)
   const [showLyricsDialog, setShowLyricsDialog] = useState(false)
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null)
+
+  const updateCredits = (n: number) => {
+    setCreditsRemaining(n)
+    window.dispatchEvent(new CustomEvent("credits-updated", { detail: { credits: n } }))
+  }
   const [uploadedAudioId, setUploadedAudioId] = useState<string | null>(null)
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const uploadRef = useRef<HTMLInputElement>(null)
-  const [activeTool, setActiveTool] = useState<string>("lyrics-to-song")
+  const [activeTool, setActiveTool] = useState<string>(initialTool)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedAlbum, setSelectedAlbum] = useState("ALL")
   const [showFavorites, setShowFavorites] = useState(false)
   const [currentSong, setCurrentSong] = useState<SongItem | null>(null)
   const [userSongs, setUserSongs] = useState<SongItem[]>(demoSongs)
   const [loadingSlots, setLoadingSlots] = useState(0)
+  const [coverLoadingSlots, setCoverLoadingSlots] = useState(0)
   const [isLoadingSongs, setIsLoadingSongs] = useState(true)
+  const [loadExampleSong, setLoadExampleSong] = useState(false)
+
+  const activeSongs = userSongs.filter(s => (s.tool ?? 'lyrics-to-song') === activeTool)
+  const activeLoadingSlots = activeTool === 'ai-cover' ? coverLoadingSlots : activeTool === 'vocal-remover' ? 0 : loadingSlots
 
   // Load user's songs from DB on mount
   useEffect(() => {
@@ -140,7 +157,7 @@ export default function LyricsToSongPage() {
     fetch('/api/credits')
       .then(r => r.json())
       .then(data => {
-        if (data.credits !== undefined) setCreditsRemaining(data.credits)
+        if (data.credits !== undefined) updateCredits(data.credits)
         if (data.plan) setUserPlan(data.plan)
       })
       .catch(() => null)
@@ -234,7 +251,7 @@ To guide me through the night`
         setGenerateError(data.error ?? 'Generation failed')
       } else {
         const tracks = data.tracks ?? []
-        if (data.credits_remaining !== undefined) setCreditsRemaining(data.credits_remaining)
+        if (data.credits_remaining !== undefined) updateCredits(data.credits_remaining)
         if (tracks.length > 0) {
           const newSongs: SongItem[] = tracks.map((t: { id: string; title: string; audio_url: string; image_url?: string; duration?: number }) => ({
             id: t.id,
@@ -243,6 +260,7 @@ To guide me through the night`
             audio_url: t.audio_url,
             duration: t.duration ? `${Math.floor(t.duration / 60)}:${String(Math.floor(t.duration % 60)).padStart(2, '0')}` : '3:00',
             subtitle: params.style || 'AI Generated',
+            tool: 'lyrics-to-song',
           }))
           setUserSongs(prev => [...newSongs, ...prev])
         }
@@ -263,6 +281,12 @@ To guide me through the night`
     const prompt = mode === 'lyrics' ? lyrics.trim() : title.trim()
     if (!prompt) return
 
+    // Check concurrent limit for free users
+    if (userPlan === 'free' && generatingCount >= 1) {
+      setConcurrentLimitOpen(true)
+      return
+    }
+
     const style = selectedTags.join(', ') || styles || ''
     handleGenerateWithParams({
       prompt,
@@ -282,6 +306,7 @@ To guide me through the night`
       audio_url: t.audio_url,
       duration: t.duration ? `${Math.floor(t.duration / 60)}:${String(Math.floor(t.duration % 60)).padStart(2, '0')}` : '3:00',
       subtitle: t.style || subtitleFallback,
+      tool: 'lyrics-to-song',
     }))
     setUserSongs(prev => [...newSongs, ...prev])
   }
@@ -294,7 +319,7 @@ To guide me through the night`
       const res = await fetch('/api/process', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'extend', audio_id: song.id }) })
       const data = await res.json()
       if (!res.ok) setGenerateError(data.error ?? 'Extend failed')
-      else { if (data.credits_remaining !== undefined) setCreditsRemaining(data.credits_remaining); handleProcessResult(data.tracks ?? [], song.subtitle) }
+      else { if (data.credits_remaining !== undefined) updateCredits(data.credits_remaining); handleProcessResult(data.tracks ?? [], song.subtitle) }
     } catch { setGenerateError('Network error.') }
     finally { setGeneratingCount(c => Math.max(0, c - 1)); setLoadingSlots(prev => Math.max(0, prev - 2)) }
   }
@@ -307,7 +332,7 @@ To guide me through the night`
       const res = await fetch('/api/process', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'cover', audio_id: song.id }) })
       const data = await res.json()
       if (!res.ok) setGenerateError(data.error ?? 'Cover failed')
-      else { if (data.credits_remaining !== undefined) setCreditsRemaining(data.credits_remaining); handleProcessResult(data.tracks ?? [], song.subtitle) }
+      else { if (data.credits_remaining !== undefined) updateCredits(data.credits_remaining); handleProcessResult(data.tracks ?? [], song.subtitle) }
     } catch { setGenerateError('Network error.') }
     finally { setGeneratingCount(c => Math.max(0, c - 1)); setLoadingSlots(prev => Math.max(0, prev - 2)) }
   }
@@ -320,7 +345,7 @@ To guide me through the night`
       const res = await fetch('/api/process', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'stems', audio_id: song.id }) })
       const data = await res.json()
       if (!res.ok) setGenerateError(data.error ?? 'Stems failed')
-      else { if (data.credits_remaining !== undefined) setCreditsRemaining(data.credits_remaining); handleProcessResult(data.tracks ?? [], song.subtitle) }
+      else { if (data.credits_remaining !== undefined) updateCredits(data.credits_remaining); handleProcessResult(data.tracks ?? [], song.subtitle) }
     } catch { setGenerateError('Network error.') }
     finally { setGeneratingCount(c => Math.max(0, c - 1)); setLoadingSlots(prev => Math.max(0, prev - 2)) }
   }
@@ -328,6 +353,19 @@ To guide me through the night`
   const handleDelete = async (song: SongItem) => {
     setUserSongs(prev => prev.filter(s => s.id !== song.id))
     await fetch('/api/songs', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: song.id }) }).catch(() => null)
+  }
+
+  const handleEditSong = (song: SongItem) => {
+    setEditTargetSong(song)
+    setEditSongTitle(song.title)
+    setEditSongDialogOpen(true)
+  }
+
+  const handleEditSongSubmit = async () => {
+    if (!editTargetSong) return
+    setUserSongs(prev => prev.map(s => s.id === editTargetSong.id ? { ...s, title: editSongTitle } : s))
+    setEditSongDialogOpen(false)
+    await fetch('/api/songs', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editTargetSong.id, title: editSongTitle }) }).catch(() => null)
   }
 
   const handleGenerateSimilar = (song: SongItem) => {
@@ -366,7 +404,7 @@ To guide me through the night`
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <ToolHeader currentTool={activeTool} onToolChange={setActiveTool} />
+      <ToolHeader currentTool={activeTool} />
       
       <main className="flex flex-1">
         {/* Left Panel - Generator Form */}
@@ -376,7 +414,10 @@ To guide me through the night`
               locale={locale}
               session={session}
               creditsRemaining={creditsRemaining}
-              onCreditsUpdate={setCreditsRemaining}
+              onCreditsUpdate={updateCredits}
+              loadExample={loadExampleSong}
+              onLoadExampleDone={() => setLoadExampleSong(false)}
+              onGeneratingChange={(gen) => setCoverLoadingSlots(gen ? 1 : 0)}
               onResult={(tracks, subtitle) => {
                 const newSongs: SongItem[] = tracks.map(t => ({
                   id: t.id,
@@ -385,6 +426,7 @@ To guide me through the night`
                   audio_url: t.audio_url,
                   duration: t.duration ? `${Math.floor(t.duration / 60)}:${String(Math.floor(t.duration % 60)).padStart(2, '0')}` : '3:00',
                   subtitle: t.style || subtitle,
+                  tool: 'ai-cover',
                 }))
                 setUserSongs(prev => [...newSongs, ...prev])
               }}
@@ -394,7 +436,7 @@ To guide me through the night`
               locale={locale}
               session={session}
               creditsRemaining={creditsRemaining}
-              onCreditsUpdate={setCreditsRemaining}
+              onCreditsUpdate={updateCredits}
               onResult={(tracks, subtitle) => {
                 const newSongs: SongItem[] = tracks.map(t => ({
                   id: t.id,
@@ -403,6 +445,7 @@ To guide me through the night`
                   audio_url: t.audio_url,
                   duration: t.duration ? `${Math.floor(t.duration / 60)}:${String(Math.floor(t.duration % 60)).padStart(2, '0')}` : '3:00',
                   subtitle: t.style || subtitle,
+                  tool: 'vocal-remover',
                 }))
                 setUserSongs(prev => [...newSongs, ...prev])
               }}
@@ -454,7 +497,7 @@ To guide me through the night`
                   size="sm"
                   className="gap-2"
                   disabled={isUploading}
-                  onClick={() => uploadRef.current?.click()}
+                  onClick={() => setUploadDialogOpen(true)}
                 >
                   {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                   {isUploading ? (locale === 'zh' ? '上传中...' : 'Uploading...') : (locale === 'zh' ? '上传歌曲' : 'Upload Song')}
@@ -594,7 +637,16 @@ To guide me through the night`
                 <label className="text-sm font-medium text-foreground">
                   {locale === 'zh' ? '风格' : 'Style'}
                 </label>
-                <Sparkles className="h-4 w-4 text-muted-foreground" />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-muted-foreground hover:text-primary transition-colors">
+                      <Sparkles className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[200px] text-xs">
+                    {locale === 'zh' ? '让风格描述更具创意性，如：dark pop, dreamy female vocals, 808 bass' : 'Makes your style more creative, e.g. dark pop, dreamy female vocals, 808 bass'}
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <textarea
                 value={styles}
@@ -820,7 +872,7 @@ To guide me through the night`
         <div className="hidden flex-1 flex-col lg:flex">
           <div className="flex h-[calc(100vh-56px)] flex-col overflow-y-auto p-6">
             {/* Tool-specific intro panel when no songs yet for non-lyrics tools */}
-            {activeTool !== 'lyrics-to-song' && userSongs.length === 0 ? (
+            {activeTool !== 'lyrics-to-song' && activeSongs.length === 0 && activeLoadingSlots === 0 ? (
               <div className="flex flex-1 items-center justify-center">
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-2 text-3xl font-bold text-foreground">
@@ -837,7 +889,7 @@ To guide me through the night`
                     variant="outline"
                     size="lg"
                     className="mt-6 border-primary bg-primary text-primary-foreground hover:opacity-90"
-                    onClick={() => {}}
+                    onClick={() => { if (activeTool === 'ai-cover') setLoadExampleSong(true) }}
                   >
                     {activeTool === 'ai-cover'
                       ? (locale === 'zh' ? '使用示例歌曲' : 'Use Example Song')
@@ -890,10 +942,10 @@ To guide me through the night`
                   </div>
                 ))}
               </div>
-            ) : (userSongs.length > 0 || loadingSlots > 0) ? (
+            ) : (activeSongs.length > 0 || activeLoadingSlots > 0) ? (
               <div className="mt-6 grid grid-cols-3 gap-3 xl:grid-cols-4">
                 {/* Loading skeleton cards */}
-                {loadingSlots > 0 && Array.from({ length: loadingSlots }).map((_, i) => (
+                {activeLoadingSlots > 0 && Array.from({ length: activeLoadingSlots }).map((_, i) => (
                   <div key={`loading-${i}`} className="overflow-hidden rounded-xl border border-border/50 bg-card">
                     <div className="relative aspect-[4/3] bg-gradient-to-br from-stone-700/60 to-neutral-800/60 flex items-center justify-center">
                       <div className="flex flex-col items-center gap-3">
@@ -907,7 +959,7 @@ To guide me through the night`
                     </div>
                   </div>
                 ))}
-                {userSongs
+                {activeSongs
                   .filter(s => !searchQuery || s.title.toLowerCase().includes(searchQuery.toLowerCase()) || s.subtitle.toLowerCase().includes(searchQuery.toLowerCase()))
                   .filter(s => !showFavorites || favoriteSongs.includes(s.id))
                   .map((song) => (
@@ -981,7 +1033,7 @@ To guide me through the night`
                               <MoreHorizontal className="h-4 w-4" />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuContent align="end" className="w-52">
                             <DropdownMenuItem className="gap-2" onClick={() => handleExtend(song)}>
                               <RefreshCw className="h-4 w-4" />
                               {locale === 'zh' ? '延长歌曲' : 'Extend Song'}
@@ -997,6 +1049,10 @@ To guide me through the night`
                             <DropdownMenuItem className="gap-2" onClick={() => handleStems(song)}>
                               <Scissors className="h-4 w-4" />
                               {locale === 'zh' ? '分离音轨' : 'Get Stems'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="gap-2" onClick={() => handleEditSong(song)}>
+                              <FileText className="h-4 w-4" />
+                              {locale === 'zh' ? '编辑歌曲详情' : 'Edit Song Detail'}
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator />
@@ -1076,6 +1132,102 @@ To guide me through the night`
         featureNameZh={upgradeFeature.nameZh}
         locale={locale}
       />
+
+      {/* Upload Song Dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{locale === 'zh' ? '上传歌曲' : 'Upload Song'}</DialogTitle>
+            <DialogDescription>
+              {locale === 'zh'
+                ? '免费用户最多剪辑 1 分钟音频。'
+                : 'Free users can trim up to 1 minute of audio.'}
+              {' '}
+              <a href="/pricing" className="text-primary underline hover:no-underline">
+                {locale === 'zh' ? '升级解锁更长时长。' : 'Upgrade to unlock longer uploads.'}
+              </a>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-2">
+            <input
+              ref={uploadRef}
+              type="file"
+              accept="audio/mp3,audio/mpeg,audio/wav,audio/wave"
+              className="hidden"
+              onChange={e => {
+                const f = e.target.files?.[0]
+                if (f) { handleUploadSong(f); setUploadDialogOpen(false) }
+                e.target.value = ''
+              }}
+            />
+            <Button
+              onClick={() => uploadRef.current?.click()}
+              disabled={isUploading}
+              className="gap-2 w-full"
+            >
+              {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {isUploading
+                ? (locale === 'zh' ? '上传中...' : 'Uploading...')
+                : (locale === 'zh' ? '选择文件' : 'Choose File')}
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
+              {locale === 'zh' ? '取消' : 'Cancel'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Concurrent Generation Limit Dialog */}
+      <Dialog open={concurrentLimitOpen} onOpenChange={setConcurrentLimitOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{locale === 'zh' ? '并发生成已达上限' : 'Concurrent Generation Limit Reached'}</DialogTitle>
+            <DialogDescription>
+              {locale === 'zh'
+                ? '请升级到更高套餐以同时生成更多歌曲。'
+                : 'Please upgrade to a higher plan to generate more songs concurrently.'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setConcurrentLimitOpen(false)}>
+              {locale === 'zh' ? '取消' : 'Cancel'}
+            </Button>
+            <Button asChild>
+              <a href="/pricing">{locale === 'zh' ? '升级套餐' : 'Upgrade'}</a>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Song Detail Dialog */}
+      <Dialog open={editSongDialogOpen} onOpenChange={setEditSongDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{locale === 'zh' ? '编辑歌曲详情' : 'Edit Song Detail'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <label className="text-sm font-medium text-foreground">{locale === 'zh' ? '歌曲标题' : 'Song Title'}</label>
+              <input
+                type="text"
+                value={editSongTitle}
+                onChange={e => setEditSongTitle(e.target.value)}
+                className="mt-1.5 w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditSongDialogOpen(false)}>
+              {locale === 'zh' ? '取消' : 'Cancel'}
+            </Button>
+            <Button onClick={handleEditSongSubmit} disabled={!editSongTitle.trim()}>
+              {locale === 'zh' ? '保存' : 'Submit'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -151,10 +151,10 @@ That belongs to us alone`
         {!session && (
           <div className="mx-auto mt-6 max-w-4xl rounded-2xl border border-primary/20 bg-primary/5 px-6 py-4">
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
-              <span className="flex items-center gap-1.5 font-medium text-foreground"><Gift className="h-4 w-4 text-primary" /> Sign in to get free credits daily</span>
-              <span className="text-muted-foreground">⚡️ Generate songs within 1 minute</span>
-              <span className="text-muted-foreground">🎸 Create 8-minute songs</span>
-              <span className="text-muted-foreground">🏷️ Royalty-free for commercial use</span>
+              <span className="flex items-center gap-1.5 font-medium text-foreground"><Gift className="h-4 w-4 text-primary" /> {locale === 'zh' ? '登录每天获取免费积分' : 'Sign in to get free credits daily'}</span>
+              <span className="text-muted-foreground">{locale === 'zh' ? '⚡️ 1分钟内生成歌曲' : '⚡️ Generate songs within 1 minute'}</span>
+              <span className="text-muted-foreground">{locale === 'zh' ? '🎸 创作8分钟歌曲' : '🎸 Create 8-minute songs'}</span>
+              <span className="text-muted-foreground">{locale === 'zh' ? '🏷️ 免版税商业使用' : '🏷️ Royalty-free for commercial use'}</span>
             </div>
           </div>
         )}

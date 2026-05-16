@@ -3,6 +3,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Global clickable cursor */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary,
+label[for],
+select {
+  cursor: pointer;
+}
+
 :root {
   /* Morandi light — warm cream + dusty rose + sage */
   --background: oklch(0.97 0.01 70);
@@ -17,8 +26,8 @@
   --secondary-foreground: oklch(0.3 0.018 50);
   --muted: oklch(0.92 0.014 60);
   --muted-foreground: oklch(0.52 0.015 50);
-  --accent: oklch(0.58 0.1 152);      /* sage green — slightly more visible */
-  --accent-foreground: oklch(0.22 0.018 152);
+  --accent: oklch(0.90 0.014 60);      /* neutral warm beige — hover bg */
+  --accent-foreground: oklch(0.28 0.018 50); /* dark warm — hover text */
   --destructive: oklch(0.55 0.14 25);
   --destructive-foreground: oklch(0.98 0.005 70);
   --border: oklch(0.87 0.014 60);
@@ -54,8 +63,8 @@
   --secondary-foreground: oklch(0.9 0.01 60);
   --muted: oklch(0.31 0.014 55);
   --muted-foreground: oklch(0.65 0.012 55);
-  --accent: oklch(0.62 0.1 152);       /* sage green — more visible */
-  --accent-foreground: oklch(0.92 0.01 152);
+  --accent: oklch(0.30 0.012 55);      /* neutral warm dark — hover bg */
+  --accent-foreground: oklch(0.90 0.01 60); /* light neutral — hover text */
   --destructive: oklch(0.52 0.12 25);
   --destructive-foreground: oklch(0.92 0.01 60);
   --border: oklch(0.38 0.013 55);

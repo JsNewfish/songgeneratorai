@@ -99,6 +99,29 @@ const plans = [
   },
 ]
 
+const featureZh: Record<string, string> = {
+  "Text/Lyrics to Music": "文字/歌词转音乐",
+  "AI Lyrics Generator": "AI歌词生成器",
+  "AI Song Cover": "AI翻唱歌曲",
+  "AI Vocal Removal": "AI人声消除",
+  "AI Singing Photo (2 min)": "AI动态歌手图片(2分钟)",
+  "AI Singing Photo (10 min)": "AI动态歌手图片(10分钟)",
+  "Custom Voice Model (Max 100)": "自定义声音模型(最多100个)",
+  "Custom Voice Model (Unlimited)": "自定义声音模型(无限制)",
+  "Upload Custom Music (2 min)": "上传自定义音乐(2分钟)",
+  "Upload Custom Music (8 min)": "上传自定义音乐(8分钟)",
+  "1 concurrent generations": "1个并发生成",
+  "10 concurrent generations": "10个并发生成",
+  "Unlimited concurrent generations": "无限并发生成",
+  "365 days cloud storage": "365天云存储",
+  "Unlimited cloud storage": "无限云存储",
+  "Private Generation": "私密生成",
+  "Download MP3": "下载MP3",
+  "Download WAV/MIDI": "下载WAV/MIDI",
+  "Commercial License": "商业授权",
+  "Priority email support": "优先邮件支持",
+}
+
 interface UpgradeDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -217,13 +240,13 @@ export function UpgradeDialog({
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-start gap-1.5">
                       <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-primary" />
-                      <span className="text-xs text-foreground">{f}</span>
+                      <span className="text-xs text-foreground">{isZh ? (featureZh[f] ?? f) : f}</span>
                     </li>
                   ))}
                   {plan.unavailable.map((f) => (
                     <li key={f} className="flex items-start gap-1.5">
                       <X className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/40" />
-                      <span className="text-xs text-muted-foreground/40">{f}</span>
+                      <span className="text-xs text-muted-foreground/40">{isZh ? (featureZh[f] ?? f) : f}</span>
                     </li>
                   ))}
                 </ul>

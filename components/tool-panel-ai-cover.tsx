@@ -1,26 +1,36 @@
 "use client"
 
-import { useState, useRef } from "react"
-import { Music, Wand2, Loader2, LayoutGrid } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { Music, Wand2, Loader2, LayoutGrid, Trash2, Play, Pause, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
 
-const voicePresets = [
-  { id: "michael-jackson", name: "Michael Jackson", avatar: "https://ui-avatars.com/api/?name=MJ&background=4a4a4a&color=fff&bold=true&size=64" },
-  { id: "taylor-swift", name: "Taylor Swift", avatar: "https://ui-avatars.com/api/?name=TS&background=6b4fa0&color=fff&bold=true&size=64" },
-  { id: "ed-sheeran", name: "Ed Sheeran", avatar: "https://ui-avatars.com/api/?name=ES&background=c8602a&color=fff&bold=true&size=64" },
-  { id: "adele", name: "Adele", avatar: "https://ui-avatars.com/api/?name=AD&background=2a5c8c&color=fff&bold=true&size=64" },
-  { id: "beyonce", name: "Beyoncé", avatar: "https://ui-avatars.com/api/?name=BY&background=8c6c2a&color=fff&bold=true&size=64" },
+type VoicePreset = {
+  id: string
+  name: string
+  avatar: string
+  category: string
+  demo?: string
+}
+
+const voicePresets: VoicePreset[] = [
+  { id: "michael-jackson", name: "Michael Jackson", category: "Celebrity", avatar: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200&h=200&fit=crop&crop=face", demo: "" },
+  { id: "taylor-swift", name: "Taylor Swift", category: "Celebrity", avatar: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=200&h=200&fit=crop&crop=face", demo: "" },
+  { id: "ed-sheeran", name: "Ed Sheeran", category: "Music", avatar: "https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=200&h=200&fit=crop&crop=face", demo: "" },
+  { id: "adele", name: "Adele", category: "Music", avatar: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=200&h=200&fit=crop&crop=face", demo: "" },
+  { id: "beyonce", name: "Beyoncé", category: "Celebrity", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face", demo: "" },
+  { id: "drake", name: "Drake", category: "Music", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop&crop=face", demo: "" },
+  { id: "ariana-grande", name: "Ariana Grande", category: "Celebrity", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&h=200&fit=crop&crop=face", demo: "" },
+  { id: "the-weeknd", name: "The Weeknd", category: "Music", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=face", demo: "" },
+  { id: "billie-eilish", name: "Billie Eilish", category: "Celebrity", avatar: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=200&h=200&fit=crop&crop=face", demo: "" },
+  { id: "bruno-mars", name: "Bruno Mars", category: "Music", avatar: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=200&h=200&fit=crop&crop=face", demo: "" },
+  { id: "hatsune-miku", name: "Hatsune Miku", category: "Anime", avatar: "https://images.unsplash.com/photo-1563089145-599997674d42?w=200&h=200&fit=crop", demo: "" },
+  { id: "naruto", name: "Naruto", category: "Anime", avatar: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=200&h=200&fit=crop", demo: "" },
 ]
+
+const categories = ["ALL", "Music", "Celebrity", "Anime"]
 
 interface Props {
   locale: string
@@ -28,18 +38,64 @@ interface Props {
   creditsRemaining: number | null
   onCreditsUpdate: (c: number) => void
   onResult: (tracks: Array<{ id: string; title: string; audio_url: string; image_url?: string; duration?: number; style?: string }>, subtitle: string) => void
+  onGeneratingChange?: (generating: boolean) => void
+  loadExample?: boolean
+  onLoadExampleDone?: () => void
 }
 
-export function AICoverPanel({ locale, session, creditsRemaining, onCreditsUpdate, onResult }: Props) {
+export function AICoverPanel({ locale, session, creditsRemaining, onCreditsUpdate, onResult, onGeneratingChange, loadExample, onLoadExampleDone }: Props) {
   const [voiceModel, setVoiceModel] = useState("michael-jackson")
+  const [showVoicePicker, setShowVoicePicker] = useState(false)
+  const [pickerCategory, setPickerCategory] = useState("ALL")
+  const [playingDemo, setPlayingDemo] = useState<string | null>(null)
+  const demoAudioRef = useRef<HTMLAudioElement | null>(null)
   const [useUrl, setUseUrl] = useState(false)
   const [songUrl, setSongUrl] = useState("")
   const [songFile, setSongFile] = useState<File | null>(null)
+  const [audioObjectUrl, setAudioObjectUrl] = useState<string | null>(null)
   const [songTitle, setSongTitle] = useState("")
   const [isDragging, setIsDragging] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Create/revoke object URL when file changes
+  useEffect(() => {
+    if (songFile) {
+      const url = URL.createObjectURL(songFile)
+      setAudioObjectUrl(url)
+      return () => URL.revokeObjectURL(url)
+    } else {
+      setAudioObjectUrl(null)
+    }
+  }, [songFile])
+
+  // Load example demo song when triggered from parent
+  useEffect(() => {
+    if (!loadExample) return
+    fetch("/demo-song.mp3")
+      .then(r => r.blob())
+      .then(blob => {
+        const file = new File([blob], "demo-song.mp3", { type: "audio/mpeg" })
+        setSongFile(file)
+        setSongTitle(locale === "zh" ? "示例歌曲" : "Demo Song")
+        onLoadExampleDone?.()
+      })
+      .catch(() => { onLoadExampleDone?.() })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadExample])
+
+  // Notify parent of generating state changes
+  useEffect(() => {
+    onGeneratingChange?.(generating)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [generating])
+
+  const clearFile = () => {
+    setSongFile(null)
+    setSongTitle("")
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
 
   const handleGenerate = async () => {
     if (!session) { signIn("google"); return }
@@ -68,7 +124,9 @@ export function AICoverPanel({ locale, session, creditsRemaining, onCreditsUpdat
         audioId = uploadData.audio_id
       }
 
-      const voiceName = voicePresets.find(v => v.id === voiceModel)?.name ?? voiceModel
+      const selectedVoice = voicePresets.find(v => v.id === voiceModel)
+      const voiceName = selectedVoice?.name ?? voiceModel
+      const voiceAvatar = selectedVoice?.avatar ?? ""
       const res = await fetch("/api/process", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -82,7 +140,11 @@ export function AICoverPanel({ locale, session, creditsRemaining, onCreditsUpdat
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? "Generation failed"); return }
       if (data.credits_remaining !== undefined) onCreditsUpdate(data.credits_remaining)
-      onResult(data.tracks ?? [], `${voiceName} cover`)
+      const tracksWithAvatar = (data.tracks ?? []).map((t: { id: string; title: string; audio_url: string; image_url?: string; duration?: number; style?: string }) => ({
+        ...t,
+        image_url: t.image_url || voiceAvatar,
+      }))
+      onResult(tracksWithAvatar, `${voiceName} cover`)
     } catch {
       setError(locale === "zh" ? "网络错误，请重试" : "Network error, please try again")
     } finally {
@@ -92,6 +154,89 @@ export function AICoverPanel({ locale, session, creditsRemaining, onCreditsUpdat
 
   return (
     <>
+      {/* Voice Picker Modal */}
+      {showVoicePicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowVoicePicker(false)}>
+          <div className="relative flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-background shadow-2xl" onClick={e => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <h2 className="text-lg font-semibold text-foreground">
+                {locale === "zh" ? "选择声音模型" : "Select Voice Model"}
+              </h2>
+              <button onClick={() => setShowVoicePicker(false)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Category Tabs */}
+            <div className="flex gap-1 border-b border-border px-6 pt-3">
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setPickerCategory(cat)}
+                  className={`cursor-pointer rounded-t px-4 py-2 text-sm font-medium transition-colors ${
+                    pickerCategory === cat
+                      ? "border-b-2 border-primary text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {locale === "zh" ? { ALL: "全部", Music: "音乐", Celebrity: "名人", Anime: "动漫" }[cat] ?? cat : cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Grid */}
+            <div className="overflow-y-auto p-6">
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                {voicePresets
+                  .filter(v => pickerCategory === "ALL" || v.category === pickerCategory)
+                  .map(v => (
+                    <button
+                      key={v.id}
+                      onClick={() => { setVoiceModel(v.id); setShowVoicePicker(false) }}
+                      className={`group relative cursor-pointer overflow-hidden rounded-xl border-2 transition-all ${
+                        voiceModel === v.id ? "border-primary" : "border-transparent hover:border-primary/50"
+                      }`}
+                    >
+                      <img src={v.avatar} alt={v.name} className="aspect-square w-full object-cover" />
+                      {/* Demo play button overlay */}
+                      {v.demo && (
+                        <button
+                          onClick={e => {
+                            e.stopPropagation()
+                            if (playingDemo === v.id) {
+                              demoAudioRef.current?.pause()
+                              setPlayingDemo(null)
+                            } else {
+                              if (demoAudioRef.current) { demoAudioRef.current.pause() }
+                              const audio = new Audio(v.demo)
+                              demoAudioRef.current = audio
+                              audio.play()
+                              audio.onended = () => setPlayingDemo(null)
+                              setPlayingDemo(v.id)
+                            }
+                          }}
+                          className="absolute left-2 top-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/70"
+                        >
+                          {playingDemo === v.id ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                        </button>
+                      )}
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-2">
+                        <p className="truncate text-xs font-medium text-white">{v.name}</p>
+                      </div>
+                      {voiceModel === v.id && (
+                        <div className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                          <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto p-4 lg:p-6">
         {/* Voice Model */}
         <div>
@@ -100,38 +245,39 @@ export function AICoverPanel({ locale, session, creditsRemaining, onCreditsUpdat
               {locale === "zh" ? "声音模型" : "Voice Model"}
             </label>
             <div className="flex items-center gap-1">
-              {voicePresets.map(v => (
+              {voicePresets.slice(0, 5).map(v => (
                 <button
                   key={v.id}
                   onClick={() => setVoiceModel(v.id)}
                   title={v.name}
-                  className={`h-8 w-8 overflow-hidden rounded-full ring-2 transition-all ${
+                  className={`h-8 w-8 cursor-pointer overflow-hidden rounded-full ring-2 transition-all ${
                     voiceModel === v.id ? "ring-primary" : "ring-transparent hover:ring-primary/50"
                   }`}
                 >
                   <img src={v.avatar} alt={v.name} className="h-full w-full object-cover" />
                 </button>
               ))}
-              <button className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:border-primary">
+              <button
+                onClick={() => setShowVoicePicker(true)}
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-border text-muted-foreground hover:border-primary hover:text-primary"
+              >
                 <LayoutGrid className="h-4 w-4" />
               </button>
             </div>
           </div>
-          <Select value={voiceModel} onValueChange={setVoiceModel}>
-            <SelectTrigger className="mt-2">
-              <SelectValue>{voicePresets.find(v => v.id === voiceModel)?.name}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {voicePresets.map(v => (
-                <SelectItem key={v.id} value={v.id}>
-                  <div className="flex items-center gap-2">
-                    <img src={v.avatar} alt={v.name} className="h-5 w-5 rounded-full" />
-                    <span>{v.name}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Selected model display */}
+          <button
+            onClick={() => setShowVoicePicker(true)}
+            className="mt-2 flex w-full cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 text-left hover:border-primary/50"
+          >
+            <img
+              src={voicePresets.find(v => v.id === voiceModel)?.avatar}
+              alt={voicePresets.find(v => v.id === voiceModel)?.name}
+              className="h-8 w-8 rounded-full object-cover"
+            />
+            <span className="flex-1 text-sm text-foreground">{voicePresets.find(v => v.id === voiceModel)?.name}</span>
+            <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+          </button>
         </div>
 
         {/* Song Upload */}
@@ -153,6 +299,22 @@ export function AICoverPanel({ locale, session, creditsRemaining, onCreditsUpdat
               placeholder="Enter URL link"
               className="mt-2 w-full rounded-lg border border-border bg-muted/30 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
+          ) : audioObjectUrl ? (
+            <div className="relative mt-2 overflow-hidden rounded-xl border border-border/50 bg-muted/20 p-3">
+              <button
+                onClick={clearFile}
+                className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white/70 transition-colors hover:bg-black/60 hover:text-white"
+                title={locale === "zh" ? "移除" : "Remove"}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+              <audio
+                src={audioObjectUrl}
+                controls
+                className="w-full"
+              />
+              <p className="mt-2 truncate text-xs text-muted-foreground">{songFile?.name}</p>
+            </div>
           ) : (
             <div
               onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
@@ -177,9 +339,9 @@ export function AICoverPanel({ locale, session, creditsRemaining, onCreditsUpdat
               <div className="text-center">
                 <Music className="mx-auto h-10 w-10 text-muted-foreground/40" />
                 <p className="mt-2 text-sm font-medium text-muted-foreground">
-                  {songFile ? songFile.name : (locale === "zh" ? "上传歌曲" : "Upload Song")}
+                  {locale === "zh" ? "上传歌曲" : "Upload Song"}
                 </p>
-                {!songFile && <p className="mt-1 text-xs text-muted-foreground/60">MP3, WAV · max 20MB</p>}
+                <p className="mt-1 text-xs text-muted-foreground/60">MP3, WAV · max 20MB</p>
               </div>
             </div>
           )}

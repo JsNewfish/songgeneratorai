@@ -15,6 +15,7 @@ import { useLanguage } from "@/contexts/language-context"
 
 const genres = ["Random", "Pop", "Rock", "Hip Hop", "R&B", "Country", "Jazz", "Electronic", "Folk", "Classical"]
 const emotions = ["Random", "Happy", "Sad", "Romantic", "Energetic", "Nostalgic", "Hopeful", "Angry", "Peaceful"]
+const durations = ["Random", "Short (< 2min)", "Standard (2-4min)", "Long (4-6min)", "Extended (6-8min)"]
 const languages = [
   { value: "English", label: "English" },
   { value: "Chinese", label: "简体中文" },
@@ -48,6 +49,7 @@ export function LyricsGeneratorDialog({ open, onOpenChange, onApply }: LyricsGen
   const [keywords, setKeywords] = useState("")
   const [genre, setGenre] = useState("Random")
   const [emotion, setEmotion] = useState("Random")
+  const [duration, setDuration] = useState("Random")
   const [language, setLanguage] = useState(locale === "zh" ? "Chinese" : "English")
   const [structure, setStructure] = useState("Verse Chorus")
   const [isGenerating, setIsGenerating] = useState(false)
@@ -63,6 +65,7 @@ export function LyricsGeneratorDialog({ open, onOpenChange, onApply }: LyricsGen
     keywordsPlaceholder: locale === "zh" ? "描述您想要的歌词关键词" : "Describe keywords for your lyrics",
     genre: locale === "zh" ? "流派" : "Genre",
     emotion: locale === "zh" ? "情感" : "Emotion",
+    duration: locale === "zh" ? "时长" : "Duration",
     language: locale === "zh" ? "语言" : "Language",
     structure: locale === "zh" ? "结构" : "Structure",
     generate: locale === "zh" ? "生成" : "Generate",
@@ -77,6 +80,7 @@ export function LyricsGeneratorDialog({ open, onOpenChange, onApply }: LyricsGen
     if (keywords) parts.push(`keywords: ${keywords}`)
     if (genre !== "Random") parts.push(`genre: ${genre}`)
     if (emotion !== "Random") parts.push(`mood: ${emotion}`)
+    if (duration !== "Random") parts.push(`duration: ${duration}`)
     parts.push(`structure: ${structure}`)
     return parts.join(", ")
   }
@@ -150,8 +154,8 @@ export function LyricsGeneratorDialog({ open, onOpenChange, onApply }: LyricsGen
             <div className="mt-1 text-right text-xs text-muted-foreground">{keywords.length}/300</div>
           </div>
 
-          {/* Genre + Emotion */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Genre + Emotion + Duration */}
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="text-sm font-medium text-foreground">{t.genre}</label>
               <Select value={genre} onValueChange={setGenre}>
@@ -171,6 +175,17 @@ export function LyricsGeneratorDialog({ open, onOpenChange, onApply }: LyricsGen
                 </SelectTrigger>
                 <SelectContent>
                   {emotions.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">{t.duration}</label>
+              <Select value={duration} onValueChange={setDuration}>
+                <SelectTrigger className="mt-1.5">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {durations.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

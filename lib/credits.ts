@@ -88,3 +88,14 @@ export async function addCredits(email: string, amount: number): Promise<number>
   if (error) throw new Error(`[credits] addCredits: ${error.message}`)
   return newBalance
 }
+
+/** Sets the user's subscription plan (e.g. 'basic', 'standard', 'pro', 'free'). */
+export async function setPlan(email: string, plan: string): Promise<void> {
+  const db = getAdminClient()
+  await getOrCreateCredits(email) // ensure row exists
+  const { error } = await db
+    .from('user_credits')
+    .update({ plan, updated_at: nowIso() })
+    .eq('email', email)
+  if (error) throw new Error(`[credits] setPlan: ${error.message}`)
+}
