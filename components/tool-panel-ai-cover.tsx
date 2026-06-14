@@ -16,21 +16,68 @@ type VoicePreset = {
 }
 
 const voicePresets: VoicePreset[] = [
-  { id: "michael-jackson", name: "Michael Jackson", category: "Celebrity", avatar: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200&h=200&fit=crop&crop=face", demo: "" },
-  { id: "taylor-swift", name: "Taylor Swift", category: "Celebrity", avatar: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=200&h=200&fit=crop&crop=face", demo: "" },
-  { id: "ed-sheeran", name: "Ed Sheeran", category: "Music", avatar: "https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=200&h=200&fit=crop&crop=face", demo: "" },
-  { id: "adele", name: "Adele", category: "Music", avatar: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=200&h=200&fit=crop&crop=face", demo: "" },
-  { id: "beyonce", name: "Beyoncé", category: "Celebrity", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face", demo: "" },
-  { id: "drake", name: "Drake", category: "Music", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop&crop=face", demo: "" },
-  { id: "ariana-grande", name: "Ariana Grande", category: "Celebrity", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&h=200&fit=crop&crop=face", demo: "" },
-  { id: "the-weeknd", name: "The Weeknd", category: "Music", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=face", demo: "" },
-  { id: "billie-eilish", name: "Billie Eilish", category: "Celebrity", avatar: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=200&h=200&fit=crop&crop=face", demo: "" },
-  { id: "bruno-mars", name: "Bruno Mars", category: "Music", avatar: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=200&h=200&fit=crop&crop=face", demo: "" },
-  { id: "hatsune-miku", name: "Hatsune Miku", category: "Anime", avatar: "https://images.unsplash.com/photo-1563089145-599997674d42?w=200&h=200&fit=crop", demo: "" },
-  { id: "naruto", name: "Naruto", category: "Anime", avatar: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=200&h=200&fit=crop", demo: "" },
+  // Celebrity
+  { id: "michael-jackson", name: "Michael Jackson", category: "Celebrity", avatar: "https://storage.aisongmaker.io/voicemodel/michael-jackson.jpeg" },
+  { id: "taylor-swift", name: "Taylor Swift", category: "Celebrity", avatar: "https://storage.aisongmaker.io/voicemodel/taylor-swift.jpeg" },
+  { id: "ariana-grande", name: "Ariana Grande", category: "Celebrity", avatar: "https://storage.aisongmaker.io/voicemodel/ariana-grande.jpeg" },
+  { id: "ariana-grande-butera", name: "Ariana Grande Butera", category: "Celebrity", avatar: "https://storage.aisongmaker.io/voicemodel/ariana-grande-butera.jpeg" },
+  { id: "billie-eilish", name: "Billie Eilish", category: "Celebrity", avatar: "https://storage.aisongmaker.io/voicemodel/billie-eilish.jpeg" },
+  { id: "beyonce", name: "Beyonce", category: "Celebrity", avatar: "https://storage.aisongmaker.io/voicemodel/beyonce.jpeg" },
+  { id: "donald-trump", name: "Donald Trump", category: "Celebrity", avatar: "https://storage.aisongmaker.io/voicemodel/donald-trump.jpeg" },
+  { id: "obama", name: "Obama", category: "Celebrity", avatar: "https://storage.aisongmaker.io/voicemodel/obama.jpeg" },
+  { id: "joseph-james-rogan", name: "Joe Rogan", category: "Celebrity", avatar: "https://storage.aisongmaker.io/voicemodel/joseph-james-rogan.jpeg" },
+  { id: "arnold-schwarzenegger", name: "Arnold Schwarzenegger", category: "Celebrity", avatar: "https://storage.aisongmaker.io/voicemodel/arnold-schwarzenegger.jpeg" },
+  // Music
+  { id: "drake", name: "Drake", category: "Music", avatar: "https://storage.aisongmaker.io/voicemodel/drake.jpeg" },
+  { id: "the-weeknd", name: "The Weeknd", category: "Music", avatar: "https://storage.aisongmaker.io/voicemodel/the-weeknd.jpeg" },
+  { id: "bruno-mars", name: "Bruno Mars", category: "Music", avatar: "https://storage.aisongmaker.io/voicemodel/bruno-mars.jpeg" },
+  { id: "lana-del-rey", name: "Lana Del Rey", category: "Music", avatar: "https://storage.aisongmaker.io/voicemodel/lana-del-rey.jpeg" },
+  { id: "dua-lipa", name: "Dua Lipa", category: "Music", avatar: "https://storage.aisongmaker.io/voicemodel/dua-lipa.jpeg" },
+  { id: "frank-sinatra", name: "Frank Sinatra", category: "Music", avatar: "https://storage.aisongmaker.io/voicemodel/frank-sinatra.jpeg" },
+  { id: "nicki-minaj", name: "Nicki Minaj", category: "Music", avatar: "https://storage.aisongmaker.io/voicemodel/nicki-minaj.jpeg" },
+  { id: "travis-scott", name: "Travis Scott", category: "Music", avatar: "https://storage.aisongmaker.io/voicemodel/travis-scott.jpeg" },
+  { id: "juice-wrl", name: "Juice WRLD", category: "Music", avatar: "https://storage.aisongmaker.io/voicemodel/juice-wrl.jpeg" },
+  { id: "paul-mccartney", name: "Paul McCartney", category: "Music", avatar: "https://storage.aisongmaker.io/voicemodel/paul-mccartney.jpeg" },
+  { id: "luciano-pavarotti", name: "Luciano Pavarotti", category: "Music", avatar: "https://storage.aisongmaker.io/voicemodel/luciano-pavarotti.jpeg" },
+  { id: "bad-bunny", name: "Bad Bunny", category: "Music", avatar: "https://storage.aisongmaker.io/voicemodel/bad-bunny.jpeg" },
+  { id: "burna-boy", name: "Burna Boy", category: "Music", avatar: "https://storage.aisongmaker.io/voicemodel/burna-boy.jpeg" },
+  { id: "joji", name: "Joji", category: "Music", avatar: "https://storage.aisongmaker.io/voicemodel/joji.jpeg" },
+  { id: "mf-doom", name: "MF Doom", category: "Music", avatar: "https://storage.aisongmaker.io/voicemodel/mf-doom.jpeg" },
+  // K-pop
+  { id: "rose", name: "Rose", category: "K-pop", avatar: "https://storage.aisongmaker.io/voicemodel/rose.jpeg" },
+  { id: "jungkook", name: "Jungkook", category: "K-pop", avatar: "https://storage.aisongmaker.io/voicemodel/jungkook.jpeg" },
+  { id: "blackpink-jennie", name: "Blackpink Jennie", category: "K-pop", avatar: "https://storage.aisongmaker.io/voicemodel/blackpink-jennie.jpeg" },
+  { id: "blackpinklisa", name: "Blackpink Lisa", category: "K-pop", avatar: "https://storage.aisongmaker.io/voicemodel/blackpinklisa.jpeg" },
+  { id: "jisoo", name: "Jisoo", category: "K-pop", avatar: "https://storage.aisongmaker.io/voicemodel/jisoo.jpeg" },
+  { id: "iu", name: "IU", category: "K-pop", avatar: "https://storage.aisongmaker.io/voicemodel/iu.jpeg" },
+  { id: "aespa", name: "Aespa", category: "K-pop", avatar: "https://storage.aisongmaker.io/voicemodel/aespa.jpeg" },
+  { id: "yujin", name: "Yujin", category: "K-pop", avatar: "https://storage.aisongmaker.io/voicemodel/yujin.jpeg" },
+  // Anime
+  { id: "hatsune-miku", name: "Hatsune Miku", category: "Anime", avatar: "https://storage.aisongmaker.io/voicemodel/hatsune-miku.jpeg" },
+  { id: "naruto", name: "Naruto", category: "Anime", avatar: "https://storage.aisongmaker.io/voicemodel/naruto-uzumaki.jpeg" },
+  { id: "tanjiro", name: "Tanjiro", category: "Anime", avatar: "https://storage.aisongmaker.io/voicemodel/tanjiro.jpeg" },
+  { id: "satoru-gojo", name: "Satoru Gojo", category: "Anime", avatar: "https://storage.aisongmaker.io/voicemodel/satoru-gojo.jpeg" },
+  { id: "goku", name: "Goku", category: "Anime", avatar: "https://storage.aisongmaker.io/voicemodel/goku.jpeg" },
+  { id: "jinx", name: "Jinx", category: "Anime", avatar: "https://storage.aisongmaker.io/voicemodel/jinx.jpeg" },
+  { id: "hu-tao", name: "Hu Tao", category: "Anime", avatar: "https://storage.aisongmaker.io/voicemodel/hu-tao.jpeg" },
+  { id: "kamisato-ayaka", name: "Kamisato Ayaka", category: "Anime", avatar: "https://storage.aisongmaker.io/voicemodel/kamisato-ayaka.jpeg" },
+  // Game
+  { id: "minecraft-villager", name: "Minecraft Villager", category: "Game", avatar: "https://storage.aisongmaker.io/voicemodel/minecraft-villager.jpeg" },
+  { id: "sonic-the-hedgehog", name: "Sonic the Hedgehog", category: "Game", avatar: "https://storage.aisongmaker.io/voicemodel/sonic-the-hedgehog.jpeg" },
+  { id: "arthur-morgan", name: "Arthur Morgan", category: "Game", avatar: "https://storage.aisongmaker.io/voicemodel/arthur-morgan.jpeg" },
+  { id: "leon-scott-kennedy", name: "Leon Kennedy", category: "Game", avatar: "https://storage.aisongmaker.io/voicemodel/leon-scott-kennedy.jpeg" },
+  // Cartoon
+  { id: "spongebob-squarepants", name: "SpongeBob", category: "Cartoon", avatar: "https://storage.aisongmaker.io/voicemodel/spongebob-squarepants.jpeg" },
+  { id: "peter-griffin", name: "Peter Griffin", category: "Cartoon", avatar: "https://storage.aisongmaker.io/voicemodel/peter-griffin.jpeg" },
+  { id: "sheldon-j-plankton", name: "Plankton", category: "Cartoon", avatar: "https://storage.aisongmaker.io/voicemodel/sheldon-j-plankton.jpeg" },
+  { id: "peppa-pig", name: "Peppa Pig", category: "Cartoon", avatar: "https://storage.aisongmaker.io/voicemodel/peppa-pig.jpeg" },
+  { id: "bart-simpson-singing", name: "Bart Simpson", category: "Cartoon", avatar: "https://storage.aisongmaker.io/voicemodel/bart-simpson-singing.jpeg" },
+  { id: "darth-vader", name: "Darth Vader", category: "Cartoon", avatar: "https://storage.aisongmaker.io/voicemodel/darth-vader.jpeg" },
+  { id: "mickey-mouse", name: "Mickey Mouse", category: "Cartoon", avatar: "https://storage.aisongmaker.io/voicemodel/mickey-mouse.jpeg" },
+  { id: "dora", name: "Dora", category: "Cartoon", avatar: "https://storage.aisongmaker.io/voicemodel/dora.jpeg" },
 ]
 
-const categories = ["ALL", "Music", "Celebrity", "Anime"]
+const categories = ["ALL", "Music", "Celebrity", "K-pop", "Anime", "Game", "Cartoon"]
 
 interface Props {
   locale: string

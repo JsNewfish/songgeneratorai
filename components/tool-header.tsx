@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useTheme } from "next-themes"
-import { Music, ChevronDown, Globe, CreditCard, User, LogOut, FileMusic, Sparkles, Mic2, Scissors, Volume2, FileText, Piano, Type, Moon, Sun } from "lucide-react"
+import { Music, ChevronDown, Globe, CreditCard, User, LogOut, FileMusic, Sparkles, Mic2, Scissors, Volume2, FileText, Piano, Type, Moon, Sun, Camera } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -20,6 +20,7 @@ const tools = [
   { id: "lyrics-to-song", icon: FileMusic, label: "Lyrics to Song", labelZh: "歌词转歌曲", href: "/tools/lyrics-to-song", badge: "HOT", inline: true },
   { id: "ai-cover", icon: Mic2, label: "AI Song Cover", labelZh: "AI歌曲翻唱", href: "/tools/ai-cover", badge: "NEW", inline: true },
   { id: "vocal-remover", icon: Scissors, label: "Vocal Remover", labelZh: "人声去除", href: "/tools/vocal-remover", inline: true },
+  { id: "singing-photo", icon: Camera, label: "AI Singing Photo", labelZh: "AI唱歌照片", href: "/tools/ai-singing-photo", badge: "NEW", inline: true },
   { id: "voice-trainer", icon: Volume2, label: "Voice Model Trainer", labelZh: "声音模型训练器", href: "#" },
   { id: "ai-lyrics", icon: FileText, label: "AI Lyrics Generator", labelZh: "AI歌词生成器", href: "/ai-lyrics-generator" },
   { id: "mp3-to-midi", icon: Piano, label: "MP3 to MIDI", labelZh: "MP3转MIDI", href: "#" },

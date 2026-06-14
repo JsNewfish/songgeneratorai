@@ -65,8 +65,8 @@ export async function POST(request: Request) {
   const planKey = obj.metadata?.planKey ?? (plan ? PLAN_KEY[plan] : undefined)
   const qty = Math.max(1, parseInt(obj.metadata?.quantity as string ?? '1', 10) || 1)
 
-  // Handle one-time topup purchase
-  if (eventType === 'payment.succeeded' || eventType === 'order.paid') {
+  // Handle one-time topup purchase (checkout.completed fires for one-time products)
+  if (eventType === 'checkout.completed') {
     if (email && plan === 'topup') {
       const creditsToAdd = 200 * qty
       await addCredits(email, creditsToAdd)

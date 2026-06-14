@@ -55,7 +55,7 @@ export async function POST(req: Request) {
   // Deduct credit
   let newBalance: number
   try {
-    newBalance = await deductCredits(session.user.email, 1)
+    newBalance = await deductCredits(session.user.email, 10)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : ''
     if (msg === 'Insufficient credits') {
@@ -105,14 +105,14 @@ export async function POST(req: Request) {
       throw new Error(sunoData.error?.message ?? `HTTP ${res.status}`)
     }
   } catch (err) {
-    await addCredits(session.user.email, 1).catch(() => null)
+    await addCredits(session.user.email, 10).catch(() => null)
     console.error('[api/process] Suno error', err)
     return NextResponse.json({ error: 'Processing failed. Credit refunded.' }, { status: 502 })
   }
 
   const completed = (sunoData.data ?? []).filter(t => t.state === 'succeeded' && t.audio_url)
   if (completed.length === 0) {
-    await addCredits(session.user.email, 1).catch(() => null)
+    await addCredits(session.user.email, 10).catch(() => null)
     return NextResponse.json({ error: 'No output tracks. Credit refunded.' }, { status: 502 })
   }
 

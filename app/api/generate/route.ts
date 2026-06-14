@@ -80,7 +80,7 @@ export async function POST(req: Request) {
   // 3. Deduct credit before generation
   let newBalance: number
   try {
-    newBalance = await deductCredits(session.user.email, 1)
+    newBalance = await deductCredits(session.user.email, 10)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : ''
     if (msg === 'Insufficient credits') {
@@ -124,7 +124,7 @@ export async function POST(req: Request) {
     }
   } catch (err) {
     // Refund credit on failure
-    await addCredits(session.user.email, 1).catch(() => null)
+    await addCredits(session.user.email, 10).catch(() => null)
     console.error('[api/generate] Suno error', err)
     return NextResponse.json(
       { error: 'Music generation failed. Credit refunded.' },
@@ -138,7 +138,7 @@ export async function POST(req: Request) {
   )
 
   if (completed.length === 0) {
-    await addCredits(session.user.email, 1).catch(() => null)
+    await addCredits(session.user.email, 10).catch(() => null)
     return NextResponse.json(
       { error: 'No tracks were generated. Credit refunded.' },
       { status: 502 }

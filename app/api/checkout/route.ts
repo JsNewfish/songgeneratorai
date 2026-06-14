@@ -56,6 +56,7 @@ export async function POST(request: Request) {
         referenceId: session.user.email,
         plan,     // full key e.g. 'basic_yearly'
         planKey,  // simplified key e.g. 'basic'
+        quantity: String(quantity),
       },
     }),
   })

@@ -26,6 +26,7 @@ import { AudioPlayer } from "@/components/audio-player"
 import { LyricsGeneratorDialog } from "@/components/lyrics-generator-dialog"
 import { AICoverPanel } from "@/components/tool-panel-ai-cover"
 import { VocalRemoverPanel } from "@/components/tool-panel-vocal-remover"
+import { SingingPhotoPanel } from "@/components/tool-panel-singing-photo"
 import { UpgradeDialog } from "@/components/upgrade-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -96,6 +97,12 @@ export default function LyricsToSongPage({ initialTool = "lyrics-to-song" }: { i
   const [editSongDialogOpen, setEditSongDialogOpen] = useState(false)
   const [editTargetSong, setEditTargetSong] = useState<SongItem | null>(null)
   const [editSongTitle, setEditSongTitle] = useState('')
+  const [replaceSectionDialogOpen, setReplaceSectionDialogOpen] = useState(false)
+  const [replaceSectionTarget, setReplaceSectionTarget] = useState<SongItem | null>(null)
+  const [replaceSectionAt, setReplaceSectionAt] = useState(30)
+  const [replaceSectionLyrics, setReplaceSectionLyrics] = useState('')
+  const [replaceSectionStyle, setReplaceSectionStyle] = useState('')
+  const [replaceSectionGenerating, setReplaceSectionGenerating] = useState(false)
   const [voice, setVoice] = useState<"male" | "female" | "random">("random")
   const [weirdness, setWeirdness] = useState([50])
   const [styleInfluence, setStyleInfluence] = useState([50])
@@ -372,6 +379,41 @@ To guide me through the night`
     handleGenerateWithParams({ prompt: song.title, style: song.subtitle, instrumental: false, excludeStyle: '' })
   }
 
+  const handleReplaceSection = (song: SongItem) => {
+    setReplaceSectionTarget(song)
+    setReplaceSectionAt(30)
+    setReplaceSectionLyrics('')
+    setReplaceSectionStyle(song.subtitle || '')
+    setReplaceSectionDialogOpen(true)
+  }
+
+  const handleReplaceSectionSubmit = async () => {
+    if (!replaceSectionTarget || !session) return
+    setReplaceSectionGenerating(true)
+    try {
+      const res = await fetch('/api/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'extend',
+          audio_id: replaceSectionTarget.id,
+          continue_at: replaceSectionAt,
+          lyric: replaceSectionLyrics || undefined,
+          style: replaceSectionStyle || undefined,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setGenerateError(data.error ?? 'Replace failed')
+      } else {
+        if (data.credits_remaining !== undefined) updateCredits(data.credits_remaining)
+        handleProcessResult(data.tracks ?? [], replaceSectionTarget.subtitle)
+        setReplaceSectionDialogOpen(false)
+      }
+    } catch { setGenerateError('Network error.') }
+    finally { setReplaceSectionGenerating(false) }
+  }
+
   const toggleTag = (tag: string) => {
     if (selectedTags.includes(tag)) {
       setSelectedTags(selectedTags.filter(t => t !== tag))
@@ -449,6 +491,13 @@ To guide me through the night`
                 }))
                 setUserSongs(prev => [...newSongs, ...prev])
               }}
+            />
+          ) : activeTool === 'singing-photo' ? (
+            <SingingPhotoPanel
+              locale={locale}
+              session={session}
+              creditsRemaining={creditsRemaining}
+              onCreditsUpdate={updateCredits}
             />
           ) : (<>
           {/* Scrollable content */}
@@ -1038,6 +1087,10 @@ To guide me through the night`
                               <RefreshCw className="h-4 w-4" />
                               {locale === 'zh' ? '延长歌曲' : 'Extend Song'}
                             </DropdownMenuItem>
+                            <DropdownMenuItem className="gap-2" onClick={() => handleReplaceSection(song)}>
+                              <Scissors className="h-4 w-4" />
+                              {locale === 'zh' ? '替换片段' : 'Replace Section'}
+                            </DropdownMenuItem>
                             <DropdownMenuItem className="gap-2" onClick={() => handleCover(song)}>
                               <Disc className="h-4 w-4" />
                               {locale === 'zh' ? '翻唱歌曲' : 'Cover Song'}
@@ -1196,6 +1249,83 @@ To guide me through the night`
             </Button>
             <Button asChild>
               <a href="/pricing">{locale === 'zh' ? '升级套餐' : 'Upgrade'}</a>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Replace Section Dialog */}
+      <Dialog open={replaceSectionDialogOpen} onOpenChange={setReplaceSectionDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{locale === 'zh' ? '替换片段' : 'Replace Section'}</DialogTitle>
+            <DialogDescription>
+              {locale === 'zh'
+                ? '选择替换起始位置，输入新歌词和风格，AI 将重新生成该部分'
+                : 'Choose where to replace, enter new lyrics and style, AI will regenerate from that point'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {/* Preview player */}
+            {replaceSectionTarget?.audio_url && (
+              <audio controls src={replaceSectionTarget.audio_url} className="w-full h-10" />
+            )}
+            {/* Start position */}
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className="text-sm font-medium text-foreground">
+                  {locale === 'zh' ? '替换起始位置' : 'Replace from'}
+                </label>
+                <span className="text-sm text-muted-foreground">
+                  {Math.floor(replaceSectionAt / 60)}:{String(replaceSectionAt % 60).padStart(2, '0')}
+                </span>
+              </div>
+              <input
+                type="range"
+                min={5}
+                max={300}
+                step={5}
+                value={replaceSectionAt}
+                onChange={e => setReplaceSectionAt(Number(e.target.value))}
+                className="w-full accent-primary"
+              />
+              <div className="mt-0.5 flex justify-between text-xs text-muted-foreground">
+                <span>0:05</span><span>5:00</span>
+              </div>
+            </div>
+            {/* New lyrics */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">
+                {locale === 'zh' ? '新歌词（可选）' : 'New Lyrics (optional)'}
+              </label>
+              <textarea
+                value={replaceSectionLyrics}
+                onChange={e => setReplaceSectionLyrics(e.target.value)}
+                rows={4}
+                placeholder={locale === 'zh' ? '留空则由 AI 自动续写' : 'Leave empty for AI to continue'}
+                className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+              />
+            </div>
+            {/* New style */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">
+                {locale === 'zh' ? '新风格（可选）' : 'New Style (optional)'}
+              </label>
+              <input
+                type="text"
+                value={replaceSectionStyle}
+                onChange={e => setReplaceSectionStyle(e.target.value)}
+                placeholder={locale === 'zh' ? 'e.g. dark, intense, electric guitar' : 'e.g. dark, intense, electric guitar'}
+                className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setReplaceSectionDialogOpen(false)} disabled={replaceSectionGenerating}>
+              {locale === 'zh' ? '取消' : 'Cancel'}
+            </Button>
+            <Button onClick={handleReplaceSectionSubmit} disabled={replaceSectionGenerating}>
+              {replaceSectionGenerating ? <>{locale === 'zh' ? '生成中...' : 'Generating...'}</> : <>{locale === 'zh' ? '替换生成' : 'Replace'}</>}
             </Button>
           </DialogFooter>
         </DialogContent>

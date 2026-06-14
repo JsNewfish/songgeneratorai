@@ -1,19 +1,60 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useLanguage } from "@/contexts/language-context"
-import { ExternalLink, Minus, Plus } from "lucide-react"
+import { ExternalLink, Minus, Plus, Loader2 } from "lucide-react"
 import Link from "next/link"
 
 export default function MySubscriptionPage() {
   const { locale } = useLanguage()
+  const { data: session } = useSession()
   const [creditPacks, setCreditPacks] = useState(2)
+  const [credits, setCredits] = useState<number | null>(null)
+  const [plan, setPlan] = useState<string>("free")
+  const [loadingCredits, setLoadingCredits] = useState(true)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
   const creditsPerPack = 200
   const pricePerPack = 3
+
+  useEffect(() => {
+    if (!session?.user) return
+    setLoadingCredits(true)
+    fetch("/api/credits")
+      .then((r) => r.json())
+      .then((data) => {
+        setCredits(data.credits ?? 0)
+        setPlan(data.plan ?? "free")
+      })
+      .catch(() => setCredits(0))
+      .finally(() => setLoadingCredits(false))
+  }, [session])
+
+  async function handleBuyCredits() {
+    setCheckoutLoading(true)
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: "topup", quantity: creditPacks }),
+      })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+    } finally {
+      setCheckoutLoading(false)
+    }
+  }
+
+  const planLabels: Record<string, string> = {
+    free: "Free Plan",
+    basic: "Basic",
+    standard: "Standard",
+    pro: "Pro",
+  }
 
   const t = {
     en: {
@@ -31,6 +72,7 @@ export default function MySubscriptionPage() {
       buyCredits: "Buy Credit Packs",
       creditsFor: "Credits For",
       upgradePlan: "Upgrade Plan",
+      buyNow: "Buy Now",
     },
     zh: {
       title: "我的订阅",
@@ -47,6 +89,7 @@ export default function MySubscriptionPage() {
       buyCredits: "购买点数包充值",
       creditsFor: "Credits For",
       upgradePlan: "升级套餐",
+      buyNow: "立即购买",
     },
   }
 
@@ -74,7 +117,9 @@ export default function MySubscriptionPage() {
                 {/* Plan Card */}
                 <Card className="border-border bg-card p-6">
                   <p className="text-sm text-muted-foreground">{text.plan}</p>
-                  <p className="mt-2 text-xl font-semibold text-foreground">{text.freePlan}</p>
+                  <p className="mt-2 text-xl font-semibold text-foreground">
+                    {planLabels[plan] ?? plan}
+                  </p>
                 </Card>
 
                 {/* Payment Details Card */}
@@ -99,7 +144,13 @@ export default function MySubscriptionPage() {
                 {/* Credits Card */}
                 <Card className="border-border bg-card p-6">
                   <p className="text-sm text-muted-foreground">{text.credits}</p>
-                  <p className="mt-2 text-xl font-semibold text-foreground">10 Credits</p>
+                  {loadingCredits ? (
+                    <Loader2 className="mt-2 h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : (
+                    <p className="mt-2 text-xl font-semibold text-foreground">
+                      {credits ?? 0} Credits
+                    </p>
+                  )}
                 </Card>
 
                 {/* Buy Credits Card */}
@@ -132,8 +183,12 @@ export default function MySubscriptionPage() {
                     {creditPacks * creditsPerPack} {text.creditsFor} ~${(creditPacks * pricePerPack).toFixed(2)}
                   </p>
 
-                  <Button className="mt-4 w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white hover:from-purple-700 hover:to-pink-600">
-                    {text.upgradePlan}
+                  <Button
+                    className="mt-4 w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white hover:from-purple-700 hover:to-pink-600"
+                    onClick={handleBuyCredits}
+                    disabled={checkoutLoading}
+                  >
+                    {checkoutLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : text.buyNow}
                   </Button>
                 </Card>
               </div>
