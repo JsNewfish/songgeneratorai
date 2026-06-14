@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, Suspense } from "react"
 import { useSession, signIn } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import { Sparkles, Upload, Shuffle, Wand2, Loader2, Music, ChevronDown, ChevronUp, Play, Search, Heart, Info, Diamond, Share2, MoreHorizontal, Scissors, FileText, Download, Trash2, ChevronRight, RefreshCw, Copy, Disc } from "lucide-react"
@@ -76,7 +76,7 @@ function localizeStyle(style: string, locale: string): string {
 
 const albums = ["ALL", "Pop", "Rock", "Electronic", "Hip Hop", "Jazz"]
 
-export default function LyricsToSongPage({ initialTool = "lyrics-to-song" }: { initialTool?: string } = {}) {
+function LyricsToSongPage({ initialTool = "lyrics-to-song" }: { initialTool?: string } = {}) {
   const { t, locale } = useLanguage()
   const { data: session } = useSession()
   const searchParams = useSearchParams()
@@ -1359,5 +1359,13 @@ To guide me through the night`
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+export default function LyricsToSongPageWrapper(props: { initialTool?: string }) {
+  return (
+    <Suspense>
+      <LyricsToSongPage {...props} />
+    </Suspense>
   )
 }
