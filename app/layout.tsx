@@ -5,6 +5,7 @@ import { LanguageProvider } from '@/contexts/language-context'
 import { ThemeProvider } from '@/components/theme-provider'
 import { SessionProvider } from 'next-auth/react'
 import { Toaster } from '@/components/ui/sonner'
+import { PostHogProvider } from '@/components/posthog-provider'
 import './globals.css'
 
 const inter = Inter({ 
@@ -73,8 +74,10 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <SessionProvider>
             <LanguageProvider>
-              {children}
-              <Toaster />
+              <PostHogProvider>
+                {children}
+                <Toaster />
+              </PostHogProvider>
             </LanguageProvider>
           </SessionProvider>
         </ThemeProvider>

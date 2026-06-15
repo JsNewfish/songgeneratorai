@@ -31,6 +31,7 @@ import { UpgradeDialog } from "@/components/upgrade-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useLanguage } from "@/contexts/language-context"
+import { usePostHog } from "posthog-js/react"
 
 const models = [
   { id: "v4", name: "SongGeneratorAI V4", desc: "Real vocals, precise control", descZh: "真实人声，精准控制", isNew: true },
@@ -79,6 +80,7 @@ const albums = ["ALL", "Pop", "Rock", "Electronic", "Hip Hop", "Jazz"]
 function LyricsToSongPage({ initialTool = "lyrics-to-song" }: { initialTool?: string } = {}) {
   const { t, locale } = useLanguage()
   const { data: session } = useSession()
+  const posthog = usePostHog()
   const searchParams = useSearchParams()
   const [mode, setMode] = useState<"lyrics" | "text">("lyrics")
   const [lyrics, setLyrics] = useState("")
@@ -256,10 +258,12 @@ To guide me through the night`
       const data = await res.json()
       if (!res.ok) {
         setGenerateError(data.error ?? 'Generation failed')
+        posthog?.capture('generate_failed', { error: data.error ?? 'Generation failed', model: params.model || 'v4' })
       } else {
         const tracks = data.tracks ?? []
         if (data.credits_remaining !== undefined) updateCredits(data.credits_remaining)
         if (tracks.length > 0) {
+          posthog?.capture('generate_success', { track_count: tracks.length, model: params.model || 'v4', is_instrumental: params.instrumental })
           const newSongs: SongItem[] = tracks.map((t: { id: string; title: string; audio_url: string; image_url?: string; duration?: number }) => ({
             id: t.id,
             title: t.title,

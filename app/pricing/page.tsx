@@ -17,6 +17,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { useSession, signIn } from "next-auth/react"
 import { useEffect, useRef } from "react"
 import { toast } from "sonner"
+import { usePostHog } from "posthog-js/react"
 
 const plans = [
   {
@@ -139,6 +140,7 @@ const faqs = [
 export default function PricingPage() {
   const { t, locale } = useLanguage()
   const { data: session } = useSession()
+  const posthog = usePostHog()
   const [isYearly, setIsYearly] = useState(true)
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
   const [userPlan, setUserPlan] = useState<string>('free')
@@ -159,6 +161,7 @@ export default function PricingPage() {
       toast.error(locale === 'zh' ? '点数包仅对订阅用户开放' : 'Credit packs are available to subscribers only.')
       return
     }
+    posthog?.capture('checkout_started', { plan: 'topup', quantity: topupQty, source: 'pricing' })
     setLoadingPlan('topup')
     try {
       const res = await fetch('/api/checkout', {
@@ -181,10 +184,12 @@ export default function PricingPage() {
 
   const handleSubscribe = async (planName: string) => {
     if (!session) {
+      posthog?.capture('signin_prompted', { trigger: 'subscribe_click', plan: planName, source: 'pricing' })
       signIn('google')
       return
     }
     const plan = `${planName.toLowerCase()}${isYearly ? '_yearly' : ''}`
+    posthog?.capture('checkout_started', { plan, billing_cycle: isYearly ? 'yearly' : 'monthly', source: 'pricing' })
     setLoadingPlan(plan)
     try {
       const res = await fetch('/api/checkout', {

@@ -8,11 +8,13 @@ import { useLanguage } from "@/contexts/language-context"
 import { useSession, signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { LyricsGeneratorDialog } from "@/components/lyrics-generator-dialog"
+import { usePostHog } from "posthog-js/react"
 
 export function MusicGenerator() {
   const { t, locale } = useLanguage()
   const { data: session } = useSession()
   const router = useRouter()
+  const posthog = usePostHog()
   const [mode, setMode] = useState<"lyrics" | "text">("lyrics")
   const [lyrics, setLyrics] = useState("")
   const [title, setTitle] = useState("")
@@ -28,11 +30,20 @@ export function MusicGenerator() {
 
   const handleGenerate = async () => {
     if (!session) {
+      posthog?.capture('signin_prompted', { trigger: 'generate_click', source: 'home' })
       signIn('google')
       return
     }
     const prompt = mode === 'lyrics' ? lyrics.trim() : title.trim()
     if (!prompt) return
+
+    posthog?.capture('generate_clicked', {
+      mode,
+      has_styles: selectedGenres.length + selectedVibes.length + selectedTempos.length + selectedInstruments.length > 0,
+      is_instrumental: isInstrumental,
+      voice,
+      prompt_length: prompt.length,
+    })
 
     setIsGenerating(true)
 

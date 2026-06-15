@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card"
 import { useLanguage } from "@/contexts/language-context"
 import { ExternalLink, Minus, Plus, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { usePostHog } from "posthog-js/react"
 
 export default function MySubscriptionPage() {
   const { locale } = useLanguage()
@@ -18,6 +19,7 @@ export default function MySubscriptionPage() {
   const [plan, setPlan] = useState<string>("free")
   const [loadingCredits, setLoadingCredits] = useState(true)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const posthog = usePostHog()
   const creditsPerPack = 200
   const pricePerPack = 3
 
@@ -35,6 +37,7 @@ export default function MySubscriptionPage() {
   }, [session])
 
   async function handleBuyCredits() {
+    posthog?.capture('checkout_started', { plan: 'topup', quantity: creditPacks, credits: creditPacks * creditsPerPack, price: creditPacks * pricePerPack })
     setCheckoutLoading(true)
     try {
       const res = await fetch("/api/checkout", {
