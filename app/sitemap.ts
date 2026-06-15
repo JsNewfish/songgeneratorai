@@ -66,6 +66,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly",
       priority: 0.3,
     },
+    {
+      url: `${BASE_URL}/blog`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    {
+      url: `${BASE_URL}/blog/how-to-make-ai-music-free`,
+      lastModified: new Date('2026-06-15'),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}/blog/lyrics-to-song-generator`,
+      lastModified: new Date('2026-06-14'),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}/blog/best-ai-music-generator`,
+      lastModified: new Date('2026-06-13'),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
   ]
 
   return staticRoutes

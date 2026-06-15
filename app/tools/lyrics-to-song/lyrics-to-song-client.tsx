@@ -383,6 +383,13 @@ To guide me through the night`
     handleGenerateWithParams({ prompt: song.title, style: song.subtitle, instrumental: false, excludeStyle: '' })
   }
 
+  const handleShare = (song: SongItem) => {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.aisonggen.io'
+    const text = `🎵 I just created "${song.title}" with AI on SongGeneratorAI! Try it free 👇`
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(siteUrl)}`
+    window.open(twitterUrl, '_blank', 'width=550,height=420')
+  }
+
   const handleReplaceSection = (song: SongItem) => {
     setReplaceSectionTarget(song)
     setReplaceSectionAt(30)
@@ -996,7 +1003,17 @@ To guide me through the night`
                 ))}
               </div>
             ) : (activeSongs.length > 0 || activeLoadingSlots > 0) ? (
-              <div className="mt-6 grid grid-cols-3 gap-3 xl:grid-cols-4">
+              <div className="mt-6">
+                {/* My Creations notice — shown after first song generated */}
+                {activeSongs.length > 0 && (
+                  <div className="mb-3 flex items-center justify-between rounded-lg bg-muted/50 px-4 py-2 text-sm text-muted-foreground">
+                    <span>{locale === 'zh' ? '🎵 歌曲已自动保存' : '🎵 Songs are auto-saved to your library'}</span>
+                    <a href="/my-creations" className="font-medium text-primary hover:underline">
+                      {locale === 'zh' ? '查看全部创作 →' : 'View My Creations →'}
+                    </a>
+                  </div>
+                )}
+              <div className="grid grid-cols-3 gap-3 xl:grid-cols-4">
                 {/* Loading skeleton cards */}
                 {activeLoadingSlots > 0 && Array.from({ length: activeLoadingSlots }).map((_, i) => (
                   <div key={`loading-${i}`} className="overflow-hidden rounded-xl border border-border/50 bg-card">
@@ -1069,8 +1086,9 @@ To guide me through the night`
                           
                           {/* Share Button */}
                           <button
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => { e.stopPropagation(); handleShare(song) }}
                             className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
+                            title="Share on X (Twitter)"
                           >
                             <Share2 className="h-4 w-4" />
                           </button>
@@ -1140,6 +1158,7 @@ To guide me through the night`
                     </div>
                   </div>
                 ))}
+              </div>
               </div>
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center">

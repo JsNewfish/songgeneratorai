@@ -113,6 +113,9 @@ export function Header() {
           <Link href="/pricing" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             {t.nav.pricing}
           </Link>
+          <Link href="/blog" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+            Blog
+          </Link>
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
@@ -234,6 +237,9 @@ export function Header() {
             </Link>
             <Link href="/pricing" className="text-sm font-medium text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>
               {t.nav.pricing}
+            </Link>
+            <Link href="/blog" className="text-sm font-medium text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>
+              Blog
             </Link>
             <Link href="/my-creations" className="text-sm font-medium text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>
               {locale === 'zh' ? '我的创作' : 'My Creations'}
