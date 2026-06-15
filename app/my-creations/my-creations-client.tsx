@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { MoreVertical, Play, Pause, Download, Share2, Trash2, Edit2, ChevronLeft, ChevronRight, Check, Music, FileText } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { MoreVertical, Play, Pause, Download, Share2, Trash2, Edit2, ChevronLeft, ChevronRight, Check, Music, FileText, Loader2, RefreshCw } from "lucide-react"
 import { SongDetailModal } from "@/components/song-detail-modal"
 import { Button } from "@/components/ui/button"
 import {
@@ -21,6 +21,19 @@ import {
 import { ToolHeader } from "@/components/tool-header"
 import { AudioPlayer } from "@/components/audio-player"
 import { useLanguage } from "@/contexts/language-context"
+import { useSession } from "next-auth/react"
+import { toast } from "sonner"
+
+type Song = {
+  id: string
+  title: string
+  cover: string
+  audio_url: string
+  duration: string
+  createdAt: string
+  tool: string
+  style?: string
+}
 
 const tools = [
   { id: "all", label: "All Creations", labelZh: "全部创作" },
@@ -29,22 +42,55 @@ const tools = [
   { id: "ai-lyrics", label: "AI Lyrics Generator", labelZh: "AI 歌词生成器" },
 ]
 
-// Demo creations - empty for new users
-const demoCreations: Array<{ id: string; title: string; cover: string; duration: string; createdAt: string; tool: string }> = []
-
 export default function MyCreationsPage() {
   const { locale } = useLanguage()
-  const [selectedTool, setSelectedTool] = useState("ai-music")
+  const { data: session } = useSession()
+  const [selectedTool, setSelectedTool] = useState("all")
   const [activeTab, setActiveTab] = useState<"songs" | "deleted">("songs")
   const [selectedItems, setSelectedItems] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [playingSong, setPlayingSong] = useState<string | null>(null)
-  const [currentSong, setCurrentSong] = useState<typeof demoCreations[0] | null>(null)
-  const [editingSong, setEditingSong] = useState<typeof demoCreations[0] | null>(null)
-  const [creations, setCreations] = useState(demoCreations)
+  const [currentSong, setCurrentSong] = useState<Song | null>(null)
+  const [editingSong, setEditingSong] = useState<Song | null>(null)
+  const [creations, setCreations] = useState<Song[]>([])
+  const [loading, setLoading] = useState(true)
+  const [total, setTotal] = useState(0)
+  const itemsPerPage = 20
 
-  const totalItems = creations.length
-  const itemsPerPage = 10
+  const fetchSongs = useCallback(async (page = 1) => {
+    if (!session?.user) return
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/songs?page=${page}&limit=${itemsPerPage}`)
+      const data = await res.json()
+      const songs: Song[] = (data.songs ?? []).map((s: {
+        id: string; title?: string; image_url?: string; audio_url?: string;
+        duration?: number; created_at?: string; style?: string
+      }) => ({
+        id: s.id,
+        title: s.title || 'Untitled Track',
+        cover: s.image_url || '',
+        audio_url: s.audio_url || '',
+        duration: s.duration ? `${Math.floor(s.duration / 60)}:${String(s.duration % 60).padStart(2, '0')}` : '3:00',
+        createdAt: s.created_at ? new Date(s.created_at).toLocaleDateString() : '',
+        tool: 'ai-music',
+        style: s.style || '',
+      }))
+      setCreations(songs)
+      setTotal(data.total ?? songs.length)
+    } catch {
+      toast.error('Failed to load songs')
+    } finally {
+      setLoading(false)
+    }
+  }, [session])
+
+  useEffect(() => {
+    fetchSongs(currentPage)
+  }, [fetchSongs, currentPage])
+
+  const totalItems = total
+  const totalPages = Math.ceil(total / itemsPerPage)
 
   const toggleSelectAll = () => {
     if (selectedItems.length === creations.length) {
@@ -62,7 +108,7 @@ export default function MyCreationsPage() {
     }
   }
 
-  const handlePlaySong = (song: typeof demoCreations[0]) => {
+  const handlePlaySong = (song: Song) => {
     if (playingSong === song.id) {
       setPlayingSong(null)
       setCurrentSong(null)
@@ -72,12 +118,29 @@ export default function MyCreationsPage() {
     }
   }
 
-  const filteredCreations = selectedTool === "all" 
-    ? creations 
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch('/api/songs', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      if (!res.ok) throw new Error()
+      setCreations(prev => prev.filter(c => c.id !== id))
+      setTotal(t => t - 1)
+      if (playingSong === id) { setPlayingSong(null); setCurrentSong(null) }
+      toast.success(locale === 'zh' ? '已删除' : 'Deleted')
+    } catch {
+      toast.error(locale === 'zh' ? '删除失败' : 'Delete failed')
+    }
+  }
+
+  const filteredCreations = selectedTool === "all"
+    ? creations
     : creations.filter(c => c.tool === selectedTool)
-  
+
   const handleUpdateSong = (data: { id: string; title: string; image?: string }) => {
-    setCreations(prev => prev.map(c => 
+    setCreations(prev => prev.map(c =>
       c.id === data.id ? { ...c, title: data.title, cover: data.image || c.cover } : c
     ))
   }
@@ -91,9 +154,14 @@ export default function MyCreationsPage() {
       <main className="flex-1">
         <div className="container mx-auto max-w-5xl px-4 py-8">
           {/* Page Title */}
-          <h1 className="text-3xl font-bold text-foreground">
-            {locale === 'zh' ? '我的创作' : 'My Creations'}
-          </h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold text-foreground">
+              {locale === 'zh' ? '我的创作' : 'My Creations'}
+            </h1>
+            <Button variant="ghost" size="sm" onClick={() => fetchSongs(currentPage)} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
 
           {/* Tool Filter */}
           <div className="mt-6">
@@ -125,16 +193,6 @@ export default function MyCreationsPage() {
             >
               {locale === 'zh' ? '我的歌曲' : 'My Songs'}
             </button>
-            <button
-              onClick={() => setActiveTab("deleted")}
-              className={`pb-3 text-sm font-medium transition-colors ${
-                activeTab === "deleted"
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {locale === 'zh' ? '最近删除' : 'Recently Deleted'}
-            </button>
           </div>
 
           {/* Actions Bar */}
@@ -155,46 +213,44 @@ export default function MyCreationsPage() {
                 </div>
                 {locale === 'zh' ? '全选' : 'Select All'}
               </button>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={selectedItems.length === 0}
-                className="text-muted-foreground"
-              >
-                {locale === 'zh' ? '批量删除' : 'Batch Delete'}
-              </Button>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>
                 {locale === 'zh' ? `共 ${totalItems} 首歌曲` : `${totalItems} songs total`}
               </span>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(p => p - 1)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="px-2">{currentPage}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  disabled={currentPage * itemsPerPage >= totalItems}
-                  onClick={() => setCurrentPage(p => p + 1)}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(p => p - 1)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="px-2">{currentPage} / {totalPages}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage(p => p + 1)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Songs List */}
           <div className="mt-4 space-y-2">
-            {filteredCreations.length > 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : filteredCreations.length > 0 ? (
               filteredCreations.map((creation) => (
                 <div
                   key={creation.id}
@@ -215,13 +271,17 @@ export default function MyCreationsPage() {
                   </button>
 
                   {/* Cover with Play Overlay */}
-                  <div 
-                    className="relative h-14 w-14 cursor-pointer overflow-hidden rounded-lg bg-gradient-to-br from-purple-900 to-indigo-900"
+                  <div
+                    className="relative h-14 w-14 cursor-pointer overflow-hidden rounded-lg bg-gradient-to-br from-purple-900 to-indigo-900 flex-shrink-0"
                     onClick={() => handlePlaySong(creation)}
                   >
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Music className="h-5 w-5 text-white/50" />
-                    </div>
+                    {creation.cover ? (
+                      <img src={creation.cover} alt={creation.title} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Music className="h-5 w-5 text-white/50" />
+                      </div>
+                    )}
                     <div className={`absolute inset-0 flex items-center justify-center bg-black/40 transition-opacity ${
                       playingSong === creation.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                     }`}>
@@ -239,7 +299,8 @@ export default function MyCreationsPage() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <h3 className="truncate font-medium text-foreground">{creation.title}</h3>
-                    <p className="text-sm text-muted-foreground">{creation.createdAt}</p>
+                    <p className="text-sm text-muted-foreground">{creation.style || creation.createdAt}</p>
+                    <p className="text-xs text-muted-foreground/60">{creation.createdAt}</p>
                   </div>
 
                   {/* Actions */}
@@ -250,15 +311,25 @@ export default function MyCreationsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-36">
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         className="gap-2"
                         onClick={() => setEditingSong(creation)}
                       >
                         <FileText className="h-4 w-4" />
                         {locale === 'zh' ? '歌曲详情' : 'Song Details'}
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="gap-2"
+                        onClick={() => window.open(creation.audio_url, '_blank')}
+                      >
+                        <Download className="h-4 w-4" />
+                        {locale === 'zh' ? '下载' : 'Download'}
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="gap-2 text-red-600">
+                      <DropdownMenuItem
+                        className="gap-2 text-red-600"
+                        onClick={() => handleDelete(creation.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                         {locale === 'zh' ? '删除' : 'Delete'}
                       </DropdownMenuItem>
@@ -273,7 +344,7 @@ export default function MyCreationsPage() {
                   {locale === 'zh' ? '暂无创作' : 'No creations yet'}
                 </h3>
                 <p className="mt-2 text-muted-foreground">
-                  {locale === 'zh' 
+                  {locale === 'zh'
                     ? '开始创作您的第一首歌曲吧！'
                     : 'Start creating your first song!'}
                 </p>
@@ -289,8 +360,8 @@ export default function MyCreationsPage() {
       </main>
 
       {/* Audio Player */}
-      <AudioPlayer 
-        song={currentSong} 
+      <AudioPlayer
+        song={currentSong}
         isPlaying={playingSong !== null}
         onPlayPause={() => {
           if (playingSong) {

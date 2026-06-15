@@ -20,26 +20,31 @@ import { auth } from '@/auth'
 import { getAdminClient } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth()
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const { searchParams } = new URL(request.url)
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+  const limit = Math.min(50, parseInt(searchParams.get('limit') || '20'))
+  const offset = (page - 1) * limit
+
   try {
     const db = getAdminClient()
-    const { data, error } = await db
+    const { data, error, count } = await db
       .from('songs')
-      .select('id, title, audio_url, image_url, duration, style, created_at')
+      .select('id, title, audio_url, image_url, duration, style, created_at', { count: 'exact' })
       .eq('email', session.user.email)
       .order('created_at', { ascending: false })
-      .limit(100)
+      .range(offset, offset + limit - 1)
 
     if (error) throw error
-    return NextResponse.json({ songs: data ?? [] })
+    return NextResponse.json({ songs: data ?? [], total: count ?? 0 })
   } catch (err) {
     console.error('[api/songs] query failed:', err)
-    return NextResponse.json({ songs: [] })
+    return NextResponse.json({ songs: [], total: 0 })
   }
 }
 
