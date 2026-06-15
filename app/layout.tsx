@@ -43,15 +43,14 @@ export const metadata: Metadata = {
     url: BASE_URL,
     siteName: 'SongGeneratorAI',
     locale: 'en_US',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'SongGeneratorAI - AI Music Generator' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'SongGeneratorAI - AI Music Generator',
     description: 'Create original music effortlessly with AI. Generate high-quality songs from text or lyrics.',
     creator: '@songgeneratorai',
-  },
-  alternates: {
-    canonical: BASE_URL,
+    images: ['/og-image.png'],
   },
   icons: {
     icon: [
