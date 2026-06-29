@@ -3,7 +3,9 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
-import { posts } from '../page'
+import { blogPosts } from '@/lib/blog-posts'
+
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.aisonggen.io'
 
 const articles: Record<string, { title: string; content: string; description: string; date: string }> = {
   'how-to-make-ai-music-free': {
@@ -270,7 +272,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const article = articles[slug]
   if (!article) return {}
-  const post = posts.find(p => p.slug === slug)
+  const post = blogPosts.find(p => p.slug === slug)
   return {
     title: article.title,
     description: article.description,
@@ -359,10 +361,21 @@ export default async function BlogPost({ params }: Props) {
   const { slug } = await params
   const article = articles[slug]
   if (!article) notFound()
-  const post = posts.find(p => p.slug === slug)
+  const post = blogPosts.find(p => p.slug === slug)
+  const pageUrl = `${BASE_URL}/blog/${slug}`
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: `${BASE_URL}/blog` },
+      { '@type': 'ListItem', position: 3, name: article.title, item: pageUrl },
+    ],
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Header />
       <main className="flex-1 container mx-auto max-w-3xl px-4 py-12">
         <Link href="/blog" className="text-sm text-muted-foreground hover:text-foreground mb-6 block">← Back to Blog</Link>
