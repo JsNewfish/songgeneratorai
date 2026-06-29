@@ -13,7 +13,7 @@ const inter = Inter({
   variable: '--font-inter'
 })
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://aisonggen.io'
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.aisonggen.io'
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
@@ -52,12 +52,14 @@ export const metadata: Metadata = {
     creator: '@songgeneratorai',
     images: ['/og-image.png'],
   },
+  manifest: '/site.webmanifest',
   icons: {
     icon: [
-      { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },
-      { url: '/icon-dark-32x32.png', media: '(prefers-color-scheme: dark)' },
-      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-48x48.png', type: 'image/png', sizes: '48x48' },
+      { url: '/icon-light-32x32.png', type: 'image/png', sizes: '32x32' },
     ],
+    shortcut: '/favicon.ico',
     apple: '/apple-icon.png',
   },
 }

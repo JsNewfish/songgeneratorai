@@ -10,7 +10,7 @@ import { FAQ } from "@/components/faq"
 import { CTASection } from "@/components/cta-section"
 import { Footer } from "@/components/footer"
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://aisonggen.io'
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.aisonggen.io'
 
 export const metadata: Metadata = {
   title: 'SongGeneratorAI - Free AI Music Generator | Create Songs from Text or Lyrics',
