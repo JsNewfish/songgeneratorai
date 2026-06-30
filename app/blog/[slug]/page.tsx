@@ -272,12 +272,37 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const article = articles[slug]
   if (!article) return {}
-  const post = blogPosts.find(p => p.slug === slug)
+  const post = blogPosts.find((p) => p.slug === slug)
+  const pageUrl = `/blog/${slug}`
+  const published = new Date(article.date).toISOString()
   return {
     title: article.title,
     description: article.description,
-    alternates: { canonical: `/blog/${slug}` },
-    openGraph: { url: `/blog/${slug}`, type: 'article', publishedTime: article.date },
+    alternates: {
+      canonical: pageUrl,
+      languages: {
+        en: pageUrl,
+        'x-default': pageUrl,
+      },
+    },
+    openGraph: {
+      url: pageUrl,
+      type: 'article',
+      title: article.title,
+      description: article.description,
+      publishedTime: published,
+      modifiedTime: published,
+      authors: ['SongGeneratorAI'],
+      section: post?.tag || 'Guide',
+      tags: post ? [post.tag, 'AI Music', 'SongGeneratorAI Blog'] : ['AI Music', 'SongGeneratorAI Blog'],
+      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: article.title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: article.title,
+      description: article.description,
+      images: ['/og-image.png'],
+    },
   }
 }
 
@@ -363,13 +388,43 @@ export default async function BlogPost({ params }: Props) {
   if (!article) notFound()
   const post = blogPosts.find(p => p.slug === slug)
   const pageUrl = `${BASE_URL}/blog/${slug}`
+  const published = new Date(article.date).toISOString()
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
-      { '@type': 'ListItem', position: 2, name: 'Blog', item: `${BASE_URL}/blog` },
-      { '@type': 'ListItem', position: 3, name: article.title, item: pageUrl },
+    '@graph': [
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+          { '@type': 'ListItem', position: 2, name: 'Blog', item: `${BASE_URL}/blog` },
+          { '@type': 'ListItem', position: 3, name: article.title, item: pageUrl },
+        ],
+      },
+      {
+        '@type': 'Article',
+        headline: article.title,
+        description: article.description,
+        datePublished: published,
+        dateModified: published,
+        author: {
+          '@type': 'Organization',
+          name: 'SongGeneratorAI',
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'SongGeneratorAI',
+          logo: {
+            '@type': 'ImageObject',
+            url: `${BASE_URL}/icon-light-32x32.png`,
+          },
+        },
+        image: [`${BASE_URL}/og-image.png`],
+        articleSection: post?.tag || 'Guide',
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id': pageUrl,
+        },
+      },
     ],
   }
 
