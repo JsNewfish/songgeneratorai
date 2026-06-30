@@ -5,9 +5,15 @@ import LyricsToSongPageWrapper from './lyrics-to-song-client'
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.aisonggen.io'
 
 export const metadata: Metadata = {
-  title: 'AI Lyrics to Song Generator - Turn Lyrics into Music Instantly',
-  description: 'Convert your lyrics into a full AI-generated song in seconds. Choose genre, style, voice and tempo. Free online lyrics to song converter with royalty-free output.',
-  alternates: { canonical: '/tools/lyrics-to-song' },
+  title: 'Lyrics to Song Generator - Turn Lyrics into AI Songs',
+  description: 'Convert your lyrics into complete AI songs with vocals and instrumentals in seconds. Choose genre, voice, and style, then download royalty-free results.',
+  alternates: {
+    canonical: '/tools/lyrics-to-song',
+    languages: {
+      en: '/tools/lyrics-to-song',
+      'x-default': '/tools/lyrics-to-song',
+    },
+  },
   openGraph: { url: '/tools/lyrics-to-song' },
 }
 

@@ -2,9 +2,15 @@ import type { Metadata } from 'next'
 import LyricsToSongPage from "@/app/tools/lyrics-to-song/page"
 
 export const metadata: Metadata = {
-  title: 'AI Song Cover Generator - Create AI Covers of Any Song',
-  description: 'Generate AI-powered song covers in any voice or style. Upload audio and transform it with AI. Create unique covers for any genre in seconds.',
-  alternates: { canonical: '/tools/ai-cover' },
+  title: 'AI Cover Tool - Create AI Song Covers Online',
+  description: 'Generate AI song covers with different voices and styles from uploaded audio. Fast online AI cover creation with high-quality output.',
+  alternates: {
+    canonical: '/ai-song-cover-generator',
+    languages: {
+      en: '/ai-song-cover-generator',
+      'x-default': '/ai-song-cover-generator',
+    },
+  },
   openGraph: { url: '/tools/ai-cover' },
 }
 

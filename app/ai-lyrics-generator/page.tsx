@@ -2,9 +2,15 @@ import type { Metadata } from 'next'
 import AILyricsClient from './ai-lyrics-client'
 
 export const metadata: Metadata = {
-  title: 'AI Lyrics Generator - Write Song Lyrics Instantly with AI',
-  description: 'Generate professional song lyrics in any style with AI. Pop, rock, hip hop, R&B and more. Free AI lyrics writer that creates original, creative song lyrics in seconds.',
-  alternates: { canonical: '/ai-lyrics-generator' },
+  title: 'Free AI Lyrics Generator - Write Song Lyrics Online',
+  description: 'Write original song lyrics in seconds with a free AI lyrics generator. Create verses, hooks, and choruses in pop, rock, hip hop, R&B, and more.',
+  alternates: {
+    canonical: '/ai-lyrics-generator',
+    languages: {
+      en: '/ai-lyrics-generator',
+      'x-default': '/ai-lyrics-generator',
+    },
+  },
   openGraph: { url: '/ai-lyrics-generator' },
 }
 

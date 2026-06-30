@@ -15,7 +15,13 @@ const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.aisonggen.io'
 export const metadata: Metadata = {
   title: 'Free AI Music Generator - Text to Song & Lyrics to Song',
   description: 'Generate original songs from text or lyrics in seconds with a free AI music generator. Create vocals or instrumentals in multiple genres and download royalty-free tracks.',
-  alternates: { canonical: '/' },
+  alternates: {
+    canonical: '/',
+    languages: {
+      en: '/',
+      'x-default': '/',
+    },
+  },
   openGraph: { url: '/' },
 }
 

@@ -18,10 +18,16 @@ const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.aisonggen.io'
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: 'SongGeneratorAI - AI Music Generator | Create Original Royalty-Free Music',
+    default: 'Free AI Music Generator - Text to Song & Lyrics to Song',
     template: '%s | SongGeneratorAI',
   },
-  description: 'Create original music effortlessly with SongGeneratorAI. Generate high-quality AI music from text or lyrics. Multiple styles, royalty-free for commercial use.',
+  description: 'Create original songs from text, lyrics, or prompts with SongGeneratorAI. Generate vocals and instrumentals in multiple genres with royalty-free downloads.',
+  alternates: {
+    languages: {
+      en: '/',
+      'x-default': '/',
+    },
+  },
   keywords: 'AI music generator, AI song maker, text to music, lyrics to music, royalty-free music, AI composer, vocal remover, AI lyrics generator',
   authors: [{ name: 'SongGeneratorAI' }],
   creator: 'SongGeneratorAI',
@@ -37,8 +43,8 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'SongGeneratorAI - AI Music Generator',
-    description: 'Create original music effortlessly with AI. Generate high-quality songs from text or lyrics.',
+    title: 'Free AI Music Generator - Text to Song & Lyrics to Song',
+    description: 'Generate full songs from text or lyrics with AI in seconds. Multiple genres, voices, and royalty-free downloads.',
     type: 'website',
     url: BASE_URL,
     siteName: 'SongGeneratorAI',
@@ -47,8 +53,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SongGeneratorAI - AI Music Generator',
-    description: 'Create original music effortlessly with AI. Generate high-quality songs from text or lyrics.',
+    title: 'Free AI Music Generator - Text to Song & Lyrics to Song',
+    description: 'Generate full songs from text or lyrics with AI in seconds. Multiple genres, voices, and royalty-free downloads.',
     creator: '@songgeneratorai',
     images: ['/og-image.png'],
   },

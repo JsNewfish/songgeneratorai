@@ -5,9 +5,15 @@ import TextToSongPage from './text-to-song-client'
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.aisonggen.io'
 
 export const metadata: Metadata = {
-  title: 'Text to Song Generator - Convert Text to AI Music Online Free',
-  description: 'Type any text or description and instantly generate a full AI song. Create music from ideas, stories or prompts. Free text to song AI with multiple styles.',
-  alternates: { canonical: '/tools/text-to-song' },
+  title: 'Text to Song Generator - Create AI Songs from Prompts',
+  description: 'Turn any prompt, story, or idea into a full AI song online. Generate vocals and instrumentals in multiple styles with a free text to song generator.',
+  alternates: {
+    canonical: '/tools/text-to-song',
+    languages: {
+      en: '/tools/text-to-song',
+      'x-default': '/tools/text-to-song',
+    },
+  },
   openGraph: { url: '/tools/text-to-song' },
 }
 
