@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import AISongCoverClient from './ai-cover-client'
 
 export const metadata: Metadata = {
-  title: 'AI Song Cover Generator - Create AI Covers of Any Song',
-  description: 'Create stunning AI song covers by uploading any audio. Transform vocals, change style, and generate professional covers instantly. Free AI cover generator online.',
+  title: 'Free AI Song Cover Generator - Create Covers from Any Audio',
+  description: 'Upload audio and generate AI song covers in seconds. Convert voice style, remake tracks in new genres, and download high-quality AI covers online.',
   alternates: { canonical: '/ai-song-cover-generator' },
   openGraph: { url: '/ai-song-cover-generator' },
 }

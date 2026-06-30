@@ -13,8 +13,8 @@ import { Footer } from "@/components/footer"
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.aisonggen.io'
 
 export const metadata: Metadata = {
-  title: 'SongGeneratorAI - Free AI Music Generator | Create Songs from Text or Lyrics',
-  description: 'Generate original AI music free online. Turn your lyrics or text into full songs in seconds. Multiple genres, styles and voices. Royalty-free for commercial use.',
+  title: 'Free AI Music Generator - Text to Song & Lyrics to Song',
+  description: 'Generate original songs from text or lyrics in seconds with a free AI music generator. Create vocals or instrumentals in multiple genres and download royalty-free tracks.',
   alternates: { canonical: '/' },
   openGraph: { url: '/' },
 }
