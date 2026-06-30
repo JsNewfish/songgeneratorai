@@ -7,10 +7,14 @@ import { blogPosts } from '@/lib/blog-posts'
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.aisonggen.io'
 
 export const metadata: Metadata = {
-  title: 'Blog - AI Music Tips & Guides | SongGeneratorAI',
-  description: 'Learn how to create AI music, generate song lyrics, make AI covers and more. Tips, guides and tutorials for AI music generation.',
+  title: 'AI Music Blog - Guides for Song Creation and Covers',
+  description: 'Explore tutorials, prompts, and practical guides for AI music generation, lyrics writing, AI covers, and creator workflows.',
   alternates: {
     canonical: '/blog',
+    languages: {
+      en: '/blog',
+      'x-default': '/blog',
+    },
     types: {
       'application/rss+xml': '/blog/rss.xml',
     },

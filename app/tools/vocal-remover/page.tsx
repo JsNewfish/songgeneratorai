@@ -2,9 +2,15 @@ import type { Metadata } from 'next'
 import LyricsToSongPage from "@/app/tools/lyrics-to-song/page"
 
 export const metadata: Metadata = {
-  title: 'AI Vocal Remover - Remove Vocals from Any Song Free Online',
-  description: 'Remove vocals from any song instantly with AI. Create karaoke tracks, instrumental versions, or isolate background music. Free online vocal remover tool.',
-  alternates: { canonical: '/tools/vocal-remover' },
+  title: 'Vocal Remover - Remove Vocals and Get Instrumentals',
+  description: 'Remove vocals from songs online with AI and export clean instrumental tracks for karaoke, remixing, or practice.',
+  alternates: {
+    canonical: '/tools/vocal-remover',
+    languages: {
+      en: '/tools/vocal-remover',
+      'x-default': '/tools/vocal-remover',
+    },
+  },
   openGraph: { url: '/tools/vocal-remover' },
 }
 
